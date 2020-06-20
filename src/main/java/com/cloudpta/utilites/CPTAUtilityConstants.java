@@ -25,6 +25,10 @@ package com.cloudpta.utilites;
  */
 public interface CPTAUtilityConstants
 {
+    public static final String EXCEPTION_MESSAGE_FIELD = "message";
+    public static final String ERROR_LINE_MESSAGE_FIELD = "error_line";
+    public static final String STACK_TRACE_FIELD = "stack_trace";
+    
     public static final String CPTA_DATE_FORMAT = "yyyy-MM-dd";
     public static final String CPTA_DATE_TIME_FORMAT = "yyyy-MM-dd";
 

@@ -19,10 +19,13 @@ limitations under the License.
 */
 package com.cloudpta.utilites.exceptions;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloudpta.utilites.CPTAUtilityConstants;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Array;
 import javax.json.Json;
-import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 
 /**
  *
@@ -33,32 +36,54 @@ public class CPTAException extends Exception
     public CPTAException(Exception originalException)
     {
         // Get the message
-        String exceptionMessage = originalException.getMessage();
-        // Add it to errors
-        errors = new ArrayList<>();
-        errors.add(exceptionMessage);
-    }
-    
-    public CPTAException(List<String> errorsForThisException)
-    {
-        errors = errorsForThisException;
-    }
-    
-    public List<String> getErrors()
-    {
-        return errors;
-    }
-    
-    public String getErrorsAsString()
-    {
-        JsonArrayBuilder errorsBuilder = Json.createArrayBuilder();
-        for(String currentError : errors)
+        exceptionMessage = originalException.getMessage();
+        if(null == exceptionMessage)
         {
-            errorsBuilder.add(currentError);
+            // get exception type instead
+            exceptionMessage = originalException.toString();
         }
         
-        String errorsAsString = errorsBuilder.build().toString();
-        return errorsAsString;
+        // Get first place in CPTA or QP code the error happens on        
+        StackTraceElement[] elements = originalException.getStackTrace();
+        int numberOfStackTraceElements = Array.getLength(elements);
+        for(int i = 0; i < numberOfStackTraceElements; i++ )
+        {
+            String fileErrorHappenedIn = elements[i].getFileName();
+            // If the file starts with QP or CPTA
+            if((true == fileErrorHappenedIn.startsWith("QP"))||(true == fileErrorHappenedIn.startsWith("CPTA")))
+            {
+                // Store details here
+                firstRelevantLineError = elements[i].toString();
+                break;
+            }
+        }
+        // Get the stack trace
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        originalException.printStackTrace(pw);
+        stackTrace = sw.toString();
     }
-    protected List<String> errors;
+    
+    public CPTAException(JsonObject errors)
+    {
+        exceptionMessage = errors.getString(CPTAUtilityConstants.EXCEPTION_MESSAGE_FIELD);
+        firstRelevantLineError = errors.getString(CPTAUtilityConstants.ERROR_LINE_MESSAGE_FIELD);
+        stackTrace = errors.getString(CPTAUtilityConstants.STACK_TRACE_FIELD);
+    }
+    
+    
+    public JsonObject getErrors()
+    {
+        JsonObjectBuilder errorBuilder = Json.createObjectBuilder();
+        
+        errorBuilder.add(CPTAUtilityConstants.EXCEPTION_MESSAGE_FIELD, exceptionMessage);
+        errorBuilder.add(CPTAUtilityConstants.ERROR_LINE_MESSAGE_FIELD, firstRelevantLineError);
+        errorBuilder.add(CPTAUtilityConstants.STACK_TRACE_FIELD, stackTrace);
+        
+        return errorBuilder.build();
+    }
+    
+    protected String exceptionMessage = "";
+    protected String firstRelevantLineError = "";
+    protected String stackTrace = "";
 }

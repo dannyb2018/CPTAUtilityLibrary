@@ -64,6 +64,13 @@ public class CPTAException extends Exception
         stackTrace = sw.toString();
     }
     
+    public CPTAException(String newExceptionMessage, String newFirstRelevantLineError, String newStackTrace)
+    {
+        exceptionMessage = newExceptionMessage;
+        firstRelevantLineError = newFirstRelevantLineError;
+        stackTrace = newStackTrace;        
+    }
+    
     public CPTAException(JsonObject errors)
     {
         exceptionMessage = errors.getString(CPTAUtilityConstants.EXCEPTION_MESSAGE_FIELD);

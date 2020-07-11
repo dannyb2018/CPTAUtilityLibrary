@@ -78,6 +78,11 @@ public class CPTAException extends Exception
         stackTrace = errors.getString(CPTAUtilityConstants.STACK_TRACE_FIELD);
     }
     
+    @Override
+    public String getMessage()
+    {
+        return exceptionMessage;
+    }
     
     public JsonObject getErrors()
     {

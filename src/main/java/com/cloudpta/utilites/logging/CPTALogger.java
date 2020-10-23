@@ -22,11 +22,9 @@ package com.cloudpta.utilites.logging;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
@@ -49,7 +47,14 @@ public class CPTALogger
     {
         if( null == context)
         {
-            context = (LoggerContext) LoggerFactory.getILoggerFactory();
+            // Set root logger to off
+            Logger rootLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("ROOT");
+            rootLogger.setLevel(Level.OFF);
+            
+            // get rid of any old appenders
+            apiServerLogger.detachAndStopAllAppenders();
+            
+            context = apiServerLogger.getLoggerContext();
             // get pattern is common to both appenders
             String logPattern = loggerProperties.getProperty
                                                         (
@@ -58,31 +63,43 @@ public class CPTALogger
                                                         );
             PatternLayoutEncoder layout = new PatternLayoutEncoder();
             layout.setPattern(logPattern);
-
-            // If we need a console logging
+            layout.setContext(context);
+            layout.setImmediateFlush(true);
+            layout.start();
+            // get threshold
             String threshold = loggerProperties.getProperty
                                                         (
-                                                        CPTAUtilityConstants.LOG_CONSOLE_THRESHOLD_PROPERTY, 
-                                                        CPTAUtilityConstants.LOG_CONSOLE_THRESHOLD_PROPERTY_DEFAULT
+                                                        CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY, 
+                                                        CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY_DEFAULT
                                                         );
-            consoleLoggerLevel = property2Level(threshold);
-            if(false == consoleLoggerLevel.equals(Level.OFF))
+            loggerLevel = property2Level(threshold);
+            apiServerLogger.setLevel(loggerLevel);
+            
+            // If we need a console logging
+            String logToConsole = loggerProperties.getProperty
+                                                        (
+                                                        CPTAUtilityConstants.LOG_SHOULD_USE_CONSOLE_PROPERTY, 
+                                                        CPTAUtilityConstants.LOG_SHOULD_USE_CONSOLE_PROPERTY_DEFAULT
+                                                        );
+            
+            if(0 == logToConsole.compareTo("Y"))
             {
+                consoleAppender = new ConsoleAppender<>();
                 consoleAppender.setEncoder(layout);
                 consoleAppender.setImmediateFlush(true);
                 consoleAppender.setContext(context);
+                apiServerLogger.addAppender(consoleAppender);
                 consoleAppender.start();
             }
 
-            // If we need a file logging
-            threshold = loggerProperties.getProperty
-                                                        (
-                                                        CPTAUtilityConstants.LOG_FILE_THRESHOLD_PROPERTY, 
-                                                        CPTAUtilityConstants.LOG_FILE_THRESHOLD_PROPERTY_DEFAULT
-                                                        );
-            fileLoggerLevel = property2Level(threshold);
             // If we need a file logger
-            if( false == Level.OFF.equals(fileLoggerLevel))
+            String logToFile = loggerProperties.getProperty
+                                                        (
+                                                        CPTAUtilityConstants.LOG_SHOULD_USE_FILE_PROPERTY, 
+                                                        CPTAUtilityConstants.LOG_SHOULD_USE_FILE_PROPERTY_DEFAULT
+                                                        );
+            
+            if(0 == logToFile.compareTo("Y"))
             {
                 fileAppender = new RollingFileAppender<>();
                 fileAppender.setEncoder(layout); 
@@ -98,6 +115,7 @@ public class CPTALogger
                                                             CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY, 
                                                             CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY_DEFAULT
                                                             );
+                filePattern = filePattern + "qpapiserver-%d{yyyy-MM-dd}.%i.log.gz";
                 String maxHistory = loggerProperties.getProperty
                                                             (
                                                             CPTAUtilityConstants.LOG_FILE_MAX_HISTORY_PROPERTY, 
@@ -112,15 +130,23 @@ public class CPTALogger
                 newLogFilePolicy.setMaxFileSize(FileSize.valueOf(maxFileSize));
                 newLogFilePolicy.setFileNamePattern(filePattern);
                 newLogFilePolicy.setMaxHistory(Integer.parseInt(maxHistory));
-                newLogFilePolicy.setTotalSizeCap(FileSize.valueOf(totalMaxSize));                    
+                newLogFilePolicy.setTotalSizeCap(FileSize.valueOf(totalMaxSize));      
                 fileAppender.setRollingPolicy(newLogFilePolicy);
+                fileAppender.setName("file_appender");
 
                 fileAppender.setImmediateFlush(true);
                 fileAppender.setAppend(true);
                 fileAppender.setContext(context);
+                
+                newLogFilePolicy.setParent(fileAppender);
+                newLogFilePolicy.setContext(context);
+                apiServerLogger.addAppender(fileAppender);
+                
+                newLogFilePolicy.start();
                 fileAppender.start();
+                
             }
-        }       
+        }           
     }
     
     public static void shutdown()
@@ -128,6 +154,7 @@ public class CPTALogger
         // If there is a file appender
         if( null != fileAppender)
         {
+            fileAppender.getRollingPolicy().stop();
             fileAppender.stop();
         }
         // If there is a console appender
@@ -137,20 +164,9 @@ public class CPTALogger
         }
     }
     
-    public static Logger getLogger(Class className) 
+    public static Logger getLogger() 
     {
-        Logger loggerForThisClass = context.getLogger(className);
-        // If we need a console logger
-        if(false == consoleLoggerLevel.equals(Level.OFF))
-        {
-            loggerForThisClass.addAppender(consoleAppender);
-        }
-        // If we need a file logger
-        if(false == fileLoggerLevel.equals(Level.OFF))
-        {
-            loggerForThisClass.addAppender(fileAppender);
-        }
-        return loggerForThisClass;
+        return (ch.qos.logback.classic.Logger)apiServerLogger;
     }
     
     private static Level property2Level(String levelAsString)
@@ -188,7 +204,6 @@ public class CPTALogger
     static LoggerContext context = null;
     static RollingFileAppender<ILoggingEvent> fileAppender = null;
     static ConsoleAppender<ILoggingEvent> consoleAppender = null;
-    static Level consoleLoggerLevel = Level.OFF;
-    static Level fileLoggerLevel = Level.OFF;
-    static Logger rootLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("com.quantpipeline");
+    static Level loggerLevel = Level.OFF;
+    static Logger apiServerLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("qpapiserver");
 }

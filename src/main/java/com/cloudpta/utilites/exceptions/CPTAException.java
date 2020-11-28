@@ -83,7 +83,7 @@ public class CPTAException extends Exception
         int i = 1;
         for(i = 1; i < numberOfStackTraceElements; i++ )
         {
-            stackTrace = stackTrace + "\tat " + elements[i].toString();
+            stackTrace = stackTrace + "\tat " + elements[i].toString() + "\r\n";
             String fileErrorHappenedIn = elements[i].getFileName();
             
             // If the file starts with QP or CPTA
@@ -97,7 +97,7 @@ public class CPTAException extends Exception
         for(; i < numberOfStackTraceElements; i++ )
         {
             // Keep doing the rest of the stack
-            stackTrace = stackTrace + "\tat " + elements[i].toString();
+            stackTrace = stackTrace + "\tat " + elements[i].toString() + "\r\n";
         }
     }
     

@@ -20,8 +20,6 @@ limitations under the License.
 package com.cloudpta.utilites.exceptions;
 
 import com.cloudpta.utilites.CPTAUtilityConstants;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Array;
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -41,34 +39,17 @@ public class CPTAException extends Exception
         {
             // get exception type instead
             exceptionMessage = originalException.toString();
-        }
+        }        
         
-        // Get first place in CPTA or QP code the error happens on        
-        StackTraceElement[] elements = originalException.getStackTrace();
-        int numberOfStackTraceElements = Array.getLength(elements);
-        for(int i = 0; i < numberOfStackTraceElements; i++ )
-        {
-            String fileErrorHappenedIn = elements[i].getFileName();
-            // If the file starts with QP or CPTA
-            if((true == fileErrorHappenedIn.startsWith("QP"))||(true == fileErrorHappenedIn.startsWith("CPTA")))
-            {
-                // Store details here
-                firstRelevantLineError = elements[i].toString();
-                break;
-            }
-        }
-        // Get the stack trace
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        originalException.printStackTrace(pw);
-        stackTrace = sw.toString();
+        
+        parseStackTrace(originalException.getStackTrace());
     }
     
-    public CPTAException(String newExceptionMessage, String newFirstRelevantLineError, String newStackTrace)
+    public CPTAException(String newExceptionMessage)
     {
+        StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+        parseStackTrace(elements);
         exceptionMessage = newExceptionMessage;
-        firstRelevantLineError = newFirstRelevantLineError;
-        stackTrace = newStackTrace;        
     }
     
     public CPTAException(JsonObject errors)
@@ -93,6 +74,31 @@ public class CPTAException extends Exception
         errorBuilder.add(CPTAUtilityConstants.STACK_TRACE_FIELD, stackTrace);
         
         return errorBuilder.build();
+    }
+    
+    protected void parseStackTrace(StackTraceElement[] elements)
+    {
+        // Get first place in CPTA or QP code the error happens on        
+        int numberOfStackTraceElements = Array.getLength(elements);
+        int i = 1;
+        for(i = 1; i < numberOfStackTraceElements; i++ )
+        {
+            stackTrace = stackTrace + "\tat " + elements[i].toString();
+            String fileErrorHappenedIn = elements[i].getFileName();
+            
+            // If the file starts with QP or CPTA
+            if((true == fileErrorHappenedIn.startsWith("QP"))||(true == fileErrorHappenedIn.startsWith("CPTA")))
+            {
+                // Store details here
+                firstRelevantLineError = elements[i].toString();
+                break;
+            }
+        }
+        for(; i < numberOfStackTraceElements; i++ )
+        {
+            // Keep doing the rest of the stack
+            stackTrace = stackTrace + "\tat " + elements[i].toString();
+        }
     }
     
     protected String exceptionMessage = "";

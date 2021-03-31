@@ -24,13 +24,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
 import com.cloudpta.utilites.CPTAUtilityConstants;
 import java.util.Properties;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -48,7 +48,9 @@ public class CPTALogger
         if( null == context)
         {
             // Set root logger to off
-            Logger rootLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("ROOT");
+            LoggerContext loggerContext = new LoggerContext();
+            ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
+            Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
             
             // get rid of any old appenders
@@ -205,5 +207,5 @@ public class CPTALogger
     static RollingFileAppender<ILoggingEvent> fileAppender = null;
     static ConsoleAppender<ILoggingEvent> consoleAppender = null;
     static Level loggerLevel = Level.OFF;
-    static Logger apiServerLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("qpapiserver");
+    static Logger apiServerLogger = (ch.qos.logback.classic.Logger)((new LoggerContext()).getLogger("qpapiserver"));
 }

@@ -20,10 +20,10 @@ limitations under the License.
 package com.cloudpta.utilites.exceptions;
 
 import com.cloudpta.utilites.CPTAUtilityConstants;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import java.lang.reflect.Array;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 
 /**
  *

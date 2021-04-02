@@ -19,9 +19,9 @@ limitations under the License.
 */
 package com.cloudpta.utilites.exceptions;
 
+import jakarta.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
-import javax.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 /**

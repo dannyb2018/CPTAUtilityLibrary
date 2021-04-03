@@ -19,8 +19,7 @@ limitations under the License.
 */
 package com.cloudpta.utilites.websocket;
 
-import com.neovisionaries.ws.client.WebSocketException;
-import java.io.IOException;
+import com.cloudpta.utilites.exceptions.CPTAException;
 import java.security.NoSuchAlgorithmException;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,7 @@ import org.junit.jupiter.api.Test;
 public class CPTAWebSocketClientTest
 {
     @Test
-    public void testUnsecure() throws IOException, WebSocketException, InterruptedException
+    public void testUnsecure() throws CPTAException, InterruptedException
     {
         CPTAWebSocketClient unsecureSocket = new CPTAWebSocketClient();
         unsecureSocket.addEventListener(new CPTATestHandler(unsecureSocket));
@@ -41,7 +40,7 @@ public class CPTAWebSocketClientTest
     }
 
     @Test
-    public void testSecure() throws IOException, WebSocketException, InterruptedException, NoSuchAlgorithmException
+    public void testSecure() throws CPTAException, InterruptedException, NoSuchAlgorithmException
     {
     }    
 

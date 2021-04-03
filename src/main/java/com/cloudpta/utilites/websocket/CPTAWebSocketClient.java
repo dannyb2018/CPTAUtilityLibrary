@@ -19,6 +19,7 @@ limitations under the License.
 */
 package com.cloudpta.utilites.websocket;
 
+import com.cloudpta.utilites.exceptions.CPTAException;
 import com.neovisionaries.ws.client.ThreadType;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketException;
@@ -26,10 +27,11 @@ import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
 import com.neovisionaries.ws.client.WebSocketListener;
 import com.neovisionaries.ws.client.WebSocketState;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.net.ssl.SSLContext;
 
 /**
@@ -47,33 +49,49 @@ public class CPTAWebSocketClient
         headers = newHeaders;
     }
     
-    public void connect(String address) throws IOException, WebSocketException
+    public void connect(String address) throws CPTAException
     {
-        underlyingSocket = factory.createSocket(address);
-        underlyingSocket.addListener(new CPTAInternalWebSocketEventListener(this));
-        for( CPTAWebSocketHeader header: headers)
+        try
         {
-            underlyingSocket.addHeader(header.getName(), header.getValue());
+            underlyingSocket = factory.createSocket(address);
+            underlyingSocket.addListener(new CPTAInternalWebSocketEventListener(this));
+            for( CPTAWebSocketHeader header: headers)
+            {
+                underlyingSocket.addHeader(header.getName(), header.getValue());
+            }
+            
+            underlyingSocket.connect();    
         }
-        
-        underlyingSocket.connect();
+        catch(Exception E)
+        {
+            CPTAException wrappedException = new CPTAException(E);
+            throw wrappedException;
+        }
     }
     
-    public void secureConnect(String address, SSLContext secureContext) throws IOException, WebSocketException
+    public void secureConnect(String address, SSLContext secureContext) throws CPTAException
     {
         // Create a custom SSL context.
-//        SSLContext context = NaiveSSLContext.getInstance("TLS");
+        // SSLContext context = NaiveSSLContext.getInstance("TLS");
 
-        // Set the custom SSL context.
-        factory.setSSLContext(secureContext);        
-        underlyingSocket = factory.createSocket(address);
-        for( CPTAWebSocketHeader header: headers)
+        try
         {
-            underlyingSocket.addHeader(header.getName(), header.getValue());
+            // Set the custom SSL context.
+            factory.setSSLContext(secureContext);        
+            underlyingSocket = factory.createSocket(address);
+            for( CPTAWebSocketHeader header: headers)
+            {
+                underlyingSocket.addHeader(header.getName(), header.getValue());
+            }
+            
+            underlyingSocket.addListener(new CPTAInternalWebSocketEventListener(this));
+            underlyingSocket.connect();
         }
-        
-        underlyingSocket.addListener(new CPTAInternalWebSocketEventListener(this));
-        underlyingSocket.connect();
+        catch(Exception E)
+        {
+            CPTAException wrappedException = new CPTAException(E);
+            throw wrappedException;
+        }       
     }
     
     public void disconnect()
@@ -87,6 +105,11 @@ public class CPTAWebSocketClient
         underlyingSocket.sendText(text);
     }
     
+    public boolean isConnected()
+    {
+        return whetherConnected.get();
+    }
+
     public void addEventListener(CPTAWebSocketClientEventListener newListener)
     {
         listeners.add(newListener);
@@ -127,7 +150,13 @@ public class CPTAWebSocketClient
             currentListener.handleMessageReceived(messageText);
         }        
     }
+
+    protected void fireConnectionStatusChanged(boolean newConnectionStatus)
+    {
+        whetherConnected.set(newConnectionStatus);
+    }
     
+    protected AtomicReference<Boolean> whetherConnected = new AtomicReference<>(false);
     protected List<CPTAWebSocketHeader> headers = new ArrayList<>();
     protected WebSocketFactory factory = new WebSocketFactory();
     protected WebSocket underlyingSocket;   
@@ -171,14 +200,16 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
         client.fireMessageReceived(string);
     }
 
-    protected CPTAWebSocketClient client;
-    
-    // Not used
     @Override
     public void onStateChanged(WebSocket ws, WebSocketState wss) throws Exception
     {
-        System.out.println(wss.name());
+        boolean isConnected = ( 0 == wss.compareTo(WebSocketState.OPEN) );
+        client.fireConnectionStatusChanged(isConnected);
     }
+    protected CPTAWebSocketClient client;
+    
+    // Not used
+    
     @Override
     public void onFrame(WebSocket ws, WebSocketFrame wsf) throws Exception
     {
@@ -198,7 +229,6 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
     @Override
     public void onCloseFrame(WebSocket ws, WebSocketFrame wsf) throws Exception
     {
-       String reason = wsf.getCloseReason();
     }
     @Override
     public void onPingFrame(WebSocket ws, WebSocketFrame wsf) throws Exception

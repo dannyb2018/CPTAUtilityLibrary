@@ -110,6 +110,11 @@ public class CPTAWebSocketClient
         return whetherConnected.get();
     }
 
+    public void setPingInterval(long pingInterval)
+    {
+        underlyingSocket.setPingInterval(pingInterval);
+    }
+    
     public void addEventListener(CPTAWebSocketClientEventListener newListener)
     {
         listeners.add(newListener);

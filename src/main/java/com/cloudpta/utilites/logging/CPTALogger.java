@@ -37,12 +37,116 @@ import java.util.Properties;
  *
  * @author Danny
  */
-/**
- *
- * @author Danny
- */
 public class CPTALogger
 {
+    public static void initialise()
+    {
+        if( null == context)
+        {
+            // Set root logger to off
+            LoggerContext loggerContext = new LoggerContext();
+            ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
+            Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
+            rootLogger.setLevel(Level.OFF);
+            
+            // get rid of any old appenders
+            apiServerLogger.detachAndStopAllAppenders();
+            
+            context = apiServerLogger.getLoggerContext();
+            // get pattern is common to both appenders
+            String logPattern = CPTALogger.getPropertyValue
+                                                          (
+                                                          CPTAUtilityConstants.LOG_PATTERN_PROPERTY, 
+                                                          CPTAUtilityConstants.LOG_PATTERN_PROPERTY_DEFAULT
+                                                          );
+            PatternLayoutEncoder layout = new PatternLayoutEncoder();
+            layout.setPattern(logPattern);
+            layout.setContext(context);
+            layout.setImmediateFlush(true);
+            layout.start();
+            // get threshold
+            String threshold = CPTALogger.getPropertyValue
+                                                         (
+                                                         CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY, 
+                                                         CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY_DEFAULT
+                                                         );
+            loggerLevel = property2Level(threshold);
+            apiServerLogger.setLevel(loggerLevel);
+            
+            // If we need a console logging
+            String logToConsole = CPTALogger.getPropertyValue
+                                                            (
+                                                            CPTAUtilityConstants.LOG_SHOULD_USE_CONSOLE_PROPERTY, 
+                                                            CPTAUtilityConstants.LOG_SHOULD_USE_CONSOLE_PROPERTY_DEFAULT
+                                                            );
+            
+            if(0 == logToConsole.compareTo("Y"))
+            {
+                consoleAppender = new ConsoleAppender<>();
+                consoleAppender.setEncoder(layout);
+                consoleAppender.setImmediateFlush(true);
+                consoleAppender.setContext(context);
+                apiServerLogger.addAppender(consoleAppender);
+                consoleAppender.start();
+            }
+
+            // If we need a file logger
+            String logToFile = CPTALogger.getPropertyValue
+                                                         (
+                                                         CPTAUtilityConstants.LOG_SHOULD_USE_FILE_PROPERTY, 
+                                                         CPTAUtilityConstants.LOG_SHOULD_USE_FILE_PROPERTY_DEFAULT
+                                                         );
+            
+            if(0 == logToFile.compareTo("Y"))
+            {
+                fileAppender = new RollingFileAppender<>();
+                fileAppender.setEncoder(layout); 
+
+                // Set up the rolling log policy
+                String maxFileSize = CPTALogger.getPropertyValue
+                                                               (
+                                                               CPTAUtilityConstants.LOG_MAX_FILE_SIZE_PROPERTY, 
+                                                               CPTAUtilityConstants.LOG_MAX_FILE_SIZE_PROPERTY_DEFAULT
+                                                               );
+                String filePattern = CPTALogger.getPropertyValue
+                                                               (
+                                                               CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY, 
+                                                               CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY_DEFAULT
+                                                               );
+                filePattern = filePattern + "qpapiserver-%d{yyyy-MM-dd}.%i.log.gz";
+                String maxHistory = CPTALogger.getPropertyValue
+                                                              (
+                                                              CPTAUtilityConstants.LOG_FILE_MAX_HISTORY_PROPERTY, 
+                                                              CPTAUtilityConstants.LOG_FILE_MAX_HISTORY_PROPERTY_DEFAULT
+                                                              );
+                String totalMaxSize = CPTALogger.getPropertyValue
+                                                                (
+                                                                CPTAUtilityConstants.LOG_FILE_TOTAL_MAX_SIZE_PROPERTY, 
+                                                                CPTAUtilityConstants.LOG_FILE_TOTAL_MAX_SIZE_PROPERTY_DEFAULT
+                                                                );
+                SizeAndTimeBasedRollingPolicy newLogFilePolicy = new SizeAndTimeBasedRollingPolicy();
+                newLogFilePolicy.setMaxFileSize(FileSize.valueOf(maxFileSize));
+                newLogFilePolicy.setFileNamePattern(filePattern);
+                newLogFilePolicy.setMaxHistory(Integer.parseInt(maxHistory));
+                newLogFilePolicy.setTotalSizeCap(FileSize.valueOf(totalMaxSize));      
+                fileAppender.setRollingPolicy(newLogFilePolicy);
+                fileAppender.setName("file_appender");
+
+                fileAppender.setImmediateFlush(true);
+                fileAppender.setAppend(true);
+                fileAppender.setContext(context);
+                
+                newLogFilePolicy.setParent(fileAppender);
+                newLogFilePolicy.setContext(context);
+                apiServerLogger.addAppender(fileAppender);
+                
+                newLogFilePolicy.start();
+                fileAppender.start();
+                
+            }
+        }
+    }
+
     public static void initialise( Properties loggerProperties )
     {
         if( null == context)
@@ -203,6 +307,17 @@ public class CPTALogger
         }
     }
     
+    protected static String getPropertyValue(String propertyName, String defaultValue)
+    {
+        String propertyValue = System.getenv(propertyName);
+        // if there is no property set, use default
+        if(null == propertyValue)
+        {
+            propertyValue = defaultValue;
+        }
+
+        return propertyValue;
+    }
     static LoggerContext context = null;
     static RollingFileAppender<ILoggingEvent> fileAppender = null;
     static ConsoleAppender<ILoggingEvent> consoleAppender = null;

@@ -32,11 +32,18 @@ public class CPTAWebSocketClientTest
     @Test
     public void testUnsecure() throws CPTAException, InterruptedException
     {
-        CPTAWebSocketClient unsecureSocket = new CPTAWebSocketClient();
-        unsecureSocket.addEventListener(new CPTATestHandler(unsecureSocket));
-        unsecureSocket.connect("ws://localhost:8080/QPAPIWSServer/api/dashboard/notifications");  
-        Thread.sleep(400000);
-        unsecureSocket.disconnect();
+        try
+        {
+            CPTAWebSocketClient unsecureSocket = new CPTAWebSocketClient();
+            unsecureSocket.addEventListener(new CPTATestHandler(unsecureSocket));
+            unsecureSocket.connect("ws://localhost:8080/QPAPIWSServer/api/dashboard/notifications");  
+            Thread.sleep(400000);
+            unsecureSocket.disconnect();
+        }
+        catch(Exception E)
+        {
+            E.printStackTrace();
+        }
     }
 
     @Test

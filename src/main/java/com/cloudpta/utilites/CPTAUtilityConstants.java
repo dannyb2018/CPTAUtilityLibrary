@@ -48,7 +48,7 @@ public interface CPTAUtilityConstants
     public final static String LOG_SHOULD_USE_FILE_PROPERTY = "LOG_SHOULD_USE_FILE";    
     public final static String LOG_SHOULD_USE_FILE_PROPERTY_DEFAULT = "Y";    
     public final static String LOG_THRESHOLD_PROPERTY = "LOG_THRESHOLD";    
-    public final static String LOG_THRESHOLD_PROPERTY_OFF = "ALL";
+    public final static String LOG_THRESHOLD_PROPERTY_OFF = "OFF";
     public final static String LOG_THRESHOLD_PROPERTY_DEFAULT = "OFF";    
     public final static String LOG_THRESHOLD_PROPERTY_ALL = "ALL";    
     public final static String LOG_THRESHOLD_PROPERTY_TRACE = "TRACE";    

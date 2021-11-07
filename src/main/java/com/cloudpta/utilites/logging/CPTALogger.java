@@ -53,6 +53,7 @@ public class CPTALogger
             ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
             Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
+            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("qpapiserver"));
             
             // get rid of any old appenders
             apiServerLogger.detachAndStopAllAppenders();
@@ -327,5 +328,5 @@ public class CPTALogger
     static RollingFileAppender<ILoggingEvent> fileAppender = null;
     static ConsoleAppender<ILoggingEvent> consoleAppender = null;
     static Level loggerLevel = Level.OFF;
-    static Logger apiServerLogger = (ch.qos.logback.classic.Logger)((new LoggerContext()).getLogger("qpapiserver"));
+    static Logger apiServerLogger = null;
 }

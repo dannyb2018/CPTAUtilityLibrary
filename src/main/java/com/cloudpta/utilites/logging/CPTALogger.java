@@ -43,10 +43,17 @@ public class CPTALogger
     {
         if( null == context)
         {
-            // Get rid of all the other loggers
-            Logger rootLogger2 = (ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-            rootLogger2.detachAndStopAllAppenders();
-            rootLogger2.setLevel(Level.OFF);
+            try
+            {
+                // Try to get rid of all the other loggers
+                Logger rootLogger2 = (ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+                rootLogger2.detachAndStopAllAppenders();
+                rootLogger2.setLevel(Level.OFF);
+            }
+            catch(Exception E)
+            {
+                // Dont care
+            }
             
             // Set root logger to off
             LoggerContext loggerContext = new LoggerContext();

@@ -126,7 +126,7 @@ public class CPTALogger
                                                                CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY, 
                                                                CPTAUtilityConstants.LOG_FILE_NAME_PATTERN_PROPERTY_DEFAULT
                                                                );
-                filePattern = filePattern + "qpapiserver-%d{yyyy-MM-dd}.%i.log.gz";
+                filePattern = filePattern + "-%d{yyyy-MM-dd}.%i.log.gz";
                 String maxHistory = CPTALogger.getPropertyValue
                                                               (
                                                               CPTAUtilityConstants.LOG_FILE_MAX_HISTORY_PROPERTY, 

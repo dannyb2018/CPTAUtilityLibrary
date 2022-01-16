@@ -55,7 +55,7 @@ public class QPQueryVariablesParser
                 }
                 else if(JsonValue.ValueType.NULL == valueForKey.getValueType())
                 {
-                    value = JsonValue.NULL;
+                    value = null;
                 }
                 else if(JsonValue.ValueType.NUMBER == valueForKey.getValueType())
                 {
@@ -111,7 +111,7 @@ public class QPQueryVariablesParser
             }
             else if(JsonValue.ValueType.NULL == valueAtThisOffset.getValueType())
             {
-                value = JsonValue.NULL;
+                value = null;
             }
             else if(JsonValue.ValueType.STRING == valueAtThisOffset.getValueType())
             {

@@ -87,6 +87,7 @@ public class CPTADatabaseConnectionManager  implements AutoCloseable
             preparedStatements.put(statementName, statementSQL);
         }
     }
+
     public static void addConnectionManager(String name, String databaseType, Properties connectionProperties) throws SQLException
     {
         // Create a connection manager of this type
@@ -102,6 +103,15 @@ public class CPTADatabaseConnectionManager  implements AutoCloseable
         
         // Put it into the list
         CPTADatabaseConnectionManager.instances.put(name, connectionManager);
+    }
+
+    public static void addConnectionManager(String name, CPTADatabaseConnectionManager connectionManagerToAdd, Properties connectionProperties) throws SQLException
+    {        
+        // intitialise it 
+        connectionManagerToAdd.initialise(connectionProperties);
+        
+        // Put it into the list
+        CPTADatabaseConnectionManager.instances.put(name, connectionManagerToAdd);
     }
     
     protected void initialise(Properties connectionProperties) throws SQLException

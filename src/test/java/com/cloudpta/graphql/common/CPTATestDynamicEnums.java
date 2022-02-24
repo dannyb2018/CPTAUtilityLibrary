@@ -33,9 +33,9 @@ public class CPTATestDynamicEnums
         valueDescriptions.put("BLUE", "Blue colour");
         ColourFactory cf = new ColourFactory(values, valueDescriptions);
         ColourFactory cf2 = (ColourFactory)CPTAGraphQLDynamicEnumFactory.getInstanceByClass(Colour.class);
-        Colour[] colours = cf2.values();
+        Colour[] colours = Colour.values(Colour.class);
         assertEquals(3, Array.getLength(colours));
-        Colour red = cf2.valueOf("RED");
+        Colour red = Colour.valueOf(Colour.class,"RED");
         assertEquals("RED", red.name());
     }
 }

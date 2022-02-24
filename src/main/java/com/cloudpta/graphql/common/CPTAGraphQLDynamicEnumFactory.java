@@ -24,10 +24,25 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 
 public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
 {
-    public CPTAGraphQLDynamicEnumFactory(Class<A> type, String description, List<String> values, Map<String, String> valueDescriptions) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    public CPTAGraphQLDynamicEnumFactory
+                                       (
+                                       Class<A> type,
+                                       String description, 
+                                       List<String> values, 
+                                       Map<String, String> valueDescriptions
+                                       ) 
+                                       throws 
+                                       NoSuchMethodException, 
+                                       SecurityException, 
+                                       InstantiationException, 
+                                       IllegalAccessException, 
+                                       IllegalArgumentException, 
+                                       InvocationTargetException
     {
+        ConcurrentHashMap<Class<?>, CPTAGraphQLDynamicEnumFactory<?>> allFactories = CPTAGraphQLDynamicEnum.allFactories;
+ 
         // Check if it is already defined
-        if (ALL_FACTORIES.get(type.getCanonicalName()) != null)
+        if (null != allFactories.get(type))
         {
             String errorMessage = "you must instantiate only one factory per dynamic enum type. Duplicate factory instantiated for " + type;
             IllegalStateException duplicatedEnumException = new IllegalStateException(errorMessage);
@@ -79,7 +94,7 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         
         // Build the definition
         enumTypeDefinition = dynamicEnumTypeDefinitionBuilder.build();
-        ALL_FACTORIES.put(type.getName(), this);
+        allFactories.put(type, this);
 
         typeName = type.getName();
     }
@@ -113,7 +128,7 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         return enumValues;
     }
 
-    public static <B extends CPTAGraphQLDynamicEnum<B>> CPTAGraphQLDynamicEnum<B>  valueOf(Class<B> enumType, String enumAsString)
+    public static <B extends CPTAGraphQLDynamicEnum<B>> CPTAGraphQLDynamicEnum<B> valueOf(Class<B> enumType, String enumAsString)
     {
         // Get the factory
         CPTAGraphQLDynamicEnumFactory<B> factory = getInstanceByClass(enumType);
@@ -125,8 +140,8 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
 
     public static <B extends CPTAGraphQLDynamicEnum<B>> CPTAGraphQLDynamicEnumFactory<B> getInstanceByClass(Class<B> enumType)
     {
+        CPTAGraphQLDynamicEnumFactory<B> f = (CPTAGraphQLDynamicEnumFactory<B>) CPTAGraphQLDynamicEnum.allFactories.get(enumType);
 
-        CPTAGraphQLDynamicEnumFactory<B> f = (CPTAGraphQLDynamicEnumFactory<B>) ALL_FACTORIES.get(enumType.getName());
         if (f == null)
         {
             try
@@ -137,14 +152,8 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
             {
                 throw new RuntimeException(e);
             }
-        }
 
-        f = (CPTAGraphQLDynamicEnumFactory<B>) ALL_FACTORIES.get(enumType.getName());
-
-        if (f == null)
-        {
             throw new IllegalStateException("no factory registered for " + enumType.getClass());
-
         }
 
         return f;
@@ -160,5 +169,5 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
     protected final String typeName;
     protected final A[] enumValues;
 
-    protected static final ConcurrentHashMap<String, CPTAGraphQLDynamicEnumFactory<?>> ALL_FACTORIES = new ConcurrentHashMap<>();
+   // protected static final ConcurrentHashMap<String, CPTAGraphQLDynamicEnumFactory<?>> allFactories = new ConcurrentHashMap<>();
 }

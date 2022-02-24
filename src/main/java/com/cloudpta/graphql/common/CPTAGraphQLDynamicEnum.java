@@ -10,6 +10,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 package com.cloudpta.graphql.common;
 
+import java.util.concurrent.ConcurrentHashMap;
+import graphql.schema.idl.TypeDefinitionRegistry;
+
 public class CPTAGraphQLDynamicEnum<A extends CPTAGraphQLDynamicEnum<A>> implements Comparable<A>
 {
     protected CPTAGraphQLDynamicEnum(int ordinal, String name)
@@ -65,6 +68,30 @@ public class CPTAGraphQLDynamicEnum<A extends CPTAGraphQLDynamicEnum<A>> impleme
         return name;
     }
 
-    public final int ordinal;
-    public final String name;
+    public static <B extends CPTAGraphQLDynamicEnum<B>> B valueOf(Class<B> enumType, String enumAsString)
+    { 
+        // Get the factory
+        CPTAGraphQLDynamicEnumFactory<B> factory = (CPTAGraphQLDynamicEnumFactory<B>)allFactories.get(enumType); 
+
+        return factory.valueOf(enumAsString);
+    }
+
+    public static <B extends CPTAGraphQLDynamicEnum<B>> B[] values(Class<B> enumType)
+    {
+        // Get the factory
+        CPTAGraphQLDynamicEnumFactory<B> factory = (CPTAGraphQLDynamicEnumFactory<B>)allFactories.get(enumType); 
+        
+        return factory.values();
+    }
+
+    public static <B extends CPTAGraphQLDynamicEnum<B>> void addToTypeRegistry(Class<B>enumType, TypeDefinitionRegistry apiTypeDefinitionRegistry)
+    {
+        // Get the factory
+        CPTAGraphQLDynamicEnumFactory<B> factory = (CPTAGraphQLDynamicEnumFactory<B>)allFactories.get(enumType); 
+        factory.addToTypeRegistry(apiTypeDefinitionRegistry);
+    }
+
+    protected static final ConcurrentHashMap<Class<?>, CPTAGraphQLDynamicEnumFactory<?>> allFactories = new ConcurrentHashMap<>();
+    protected final int ordinal;
+    protected final String name;
 }

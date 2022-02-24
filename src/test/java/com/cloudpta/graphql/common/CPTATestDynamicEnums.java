@@ -42,7 +42,7 @@ public class CPTATestDynamicEnums
 
 class Colour extends CPTAGraphQLDynamicEnum<Colour>
 {
-    public Colour(int ordinal, String name)
+    protected Colour(int ordinal, String name)
     {
         super(ordinal, name);
     }

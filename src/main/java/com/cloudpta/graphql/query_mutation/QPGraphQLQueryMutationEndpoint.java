@@ -192,14 +192,17 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
             {
                 // set up mutation build if needed
                 operationBuild = getMutationBuild(mergedTypeRegistry, context);
+                // Save it
+                setExistingMutationBuild(context, operationBuild);            
             }
             // otherwise is a query 
             else
             {
                 // set up a query if needed
                 operationBuild = getQueryBuild(mergedTypeRegistry, context);
+                // Save it
+                setExistingQueryBuild(context, operationBuild);
             }
-
         }
 
         return operationBuild;
@@ -249,6 +252,9 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
                 mergedTypeDefinitionRegistry.merge(queryTypeDefinitionRegistry);
                 mergedTypeDefinitionRegistry.merge(subscriptionTypeDefinitionRegistry);
                 mergedTypeDefinitionRegistry.merge(schemaTypeDefinitionRegistry);              
+
+                // Add custom type definitions
+                addCustomTypeDefinitionsToRegistry(mergedTypeDefinitionRegistry);
         }
 
         return mergedTypeDefinitionRegistry;
@@ -390,11 +396,20 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
 
     }
 
+    protected void addCustomTypeDefinitionsToRegistry(TypeDefinitionRegistry mergedTypeDefinitionRegistry)
+    {
+        // Default is that there are no custom type definitions so do nothing
+    }
+
     // This should return any existing graph ql build or null if there is not one
     protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
     protected abstract TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException;
     protected abstract GraphQL getExistingMutationBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException;
     protected abstract GraphQL getExistingQueryBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException;
+    // Store the existing builds after made
+    protected abstract void setExistingTypeDefinitionRegistry(GraphQLContext context, TypeDefinitionRegistry typeRegistry) throws CPTAException;
+    protected abstract void setExistingMutationBuild(GraphQLContext context, GraphQL mutationBuild) throws CPTAException;
+    protected abstract void setExistingQueryBuild(GraphQLContext context, GraphQL queryBuild) throws CPTAException;
 
     // These are the inputs to the various schemas
     protected abstract InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException;

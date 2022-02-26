@@ -1,7 +1,7 @@
 /*
 
 Copyright 2017-2019 Advanced Products Limited, 
-dannyb@cloudpta.com
+Copyright 2021-2022 Liquid Markets Limited, 
 github.com/dannyb2018
 
 Licensed under the Apache License, Version 2.0 (the "License");

@@ -255,6 +255,9 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
 
                 // Add custom type definitions
                 addCustomTypeDefinitionsToRegistry(mergedTypeDefinitionRegistry);
+
+                // Save the type registry
+                setExistingTypeDefinitionRegistry(context, mergedTypeDefinitionRegistry); 
         }
 
         return mergedTypeDefinitionRegistry;

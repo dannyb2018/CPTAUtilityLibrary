@@ -93,6 +93,9 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
         Response response = null;
         try
         {
+            // Log query
+            servletLogger.info("received query: " + queryAsString);
+
             // Parse the query
             JsonReader reader = Json.createReader(new StringReader(queryAsString));
             JsonObject queryObject = reader.readObject();             
@@ -135,6 +138,8 @@ public abstract class QPGraphQLQueryMutationEndpoint extends HttpServlet
                                         .withFormatting(false);
             Jsonb converter = JsonbBuilder.create(jsonbConfig);
             String resultAsString = converter.toJson(spec);
+            // Log query
+            servletLogger.info("sent response : " + resultAsString + " to request: " + queryAsString);
             
             // Send it back
             response = Response.ok().entity(resultAsString).build();

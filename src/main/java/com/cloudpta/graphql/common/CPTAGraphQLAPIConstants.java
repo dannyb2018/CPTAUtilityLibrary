@@ -56,7 +56,8 @@ public interface CPTAGraphQLAPIConstants
     public final static String WIRING_QUERY_TYPE = "Query";    
     public final static String WIRING_SUBSCRIPTION_TYPE = "Subscription";    
     public final static String MUTATION_QUERY_HOLDER_SCHEMA = "schema {\n" + "query:Query \n" + "mutation:Mutation \n" + "subscription:Subscription \n" + "}";   
-    public final static String SUBSCRIPTION_HOLDER_SCHEMA = "schema {\n" + "subscription:Subscription \n" + "}";  
+    public final static String SUBSCRIPTION_HOLDER_SCHEMA = "schema {\n" + "query:Query\n" + "subscription:Subscription \n" + "}";  
+    public final static String SUBSCRIPTION_DUMMY_QUERY_SCHEMA = "type Query{ \n" + "dummyQuery:String \n" + "}";  
     
     // Get the names of standard qp fields in context
     public final static String SUBSCRIPTION_TIMEOUT = "QP_SUBSCRIPTION_TIMEOUT";

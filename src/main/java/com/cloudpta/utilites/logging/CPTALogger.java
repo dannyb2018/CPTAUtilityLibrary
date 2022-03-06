@@ -60,12 +60,12 @@ public class CPTALogger
             ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
             Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
-            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
+            apiLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
             
             // get rid of any old appenders
-            apiServerLogger.detachAndStopAllAppenders();
+            apiLogger.detachAndStopAllAppenders();
             
-            context = apiServerLogger.getLoggerContext();
+            context = apiLogger.getLoggerContext();
             // get pattern is common to both appenders
             String logPattern = CPTALogger.getPropertyValue
                                                           (
@@ -84,7 +84,7 @@ public class CPTALogger
                                                          CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY_DEFAULT
                                                          );
             loggerLevel = property2Level(threshold);
-            apiServerLogger.setLevel(loggerLevel);
+            apiLogger.setLevel(loggerLevel);
             
             // If we need a console logging
             String logToConsole = CPTALogger.getPropertyValue
@@ -99,7 +99,7 @@ public class CPTALogger
                 consoleAppender.setEncoder(layout);
                 consoleAppender.setImmediateFlush(true);
                 consoleAppender.setContext(context);
-                apiServerLogger.addAppender(consoleAppender);
+                apiLogger.addAppender(consoleAppender);
                 consoleAppender.start();
             }
 
@@ -151,7 +151,7 @@ public class CPTALogger
                 
                 newLogFilePolicy.setParent(fileAppender);
                 newLogFilePolicy.setContext(context);
-                apiServerLogger.addAppender(fileAppender);
+                apiLogger.addAppender(fileAppender);
                 
                 newLogFilePolicy.start();
                 fileAppender.start();
@@ -169,12 +169,12 @@ public class CPTALogger
             ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
             Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
-            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
+            apiLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
             
             // get rid of any old appenders
-            apiServerLogger.detachAndStopAllAppenders();
+            apiLogger.detachAndStopAllAppenders();
             
-            context = apiServerLogger.getLoggerContext();
+            context = apiLogger.getLoggerContext();
             // get pattern is common to both appenders
             String logPattern = loggerProperties.getProperty
                                                         (
@@ -193,7 +193,7 @@ public class CPTALogger
                                                         CPTAUtilityConstants.LOG_THRESHOLD_PROPERTY_DEFAULT
                                                         );
             loggerLevel = property2Level(threshold);
-            apiServerLogger.setLevel(loggerLevel);
+            apiLogger.setLevel(loggerLevel);
             
             // If we need a console logging
             String logToConsole = loggerProperties.getProperty
@@ -208,7 +208,7 @@ public class CPTALogger
                 consoleAppender.setEncoder(layout);
                 consoleAppender.setImmediateFlush(true);
                 consoleAppender.setContext(context);
-                apiServerLogger.addAppender(consoleAppender);
+                apiLogger.addAppender(consoleAppender);
                 consoleAppender.start();
             }
 
@@ -260,7 +260,7 @@ public class CPTALogger
                 
                 newLogFilePolicy.setParent(fileAppender);
                 newLogFilePolicy.setContext(context);
-                apiServerLogger.addAppender(fileAppender);
+                apiLogger.addAppender(fileAppender);
                 
                 newLogFilePolicy.start();
                 fileAppender.start();
@@ -286,7 +286,7 @@ public class CPTALogger
     
     public static Logger getLogger() 
     {
-        return (ch.qos.logback.classic.Logger)apiServerLogger;
+        return (ch.qos.logback.classic.Logger)apiLogger;
     }
     
     private static Level property2Level(String levelAsString)
@@ -336,5 +336,5 @@ public class CPTALogger
     static RollingFileAppender<ILoggingEvent> fileAppender = null;
     static ConsoleAppender<ILoggingEvent> consoleAppender = null;
     static Level loggerLevel = Level.OFF;
-    static Logger apiServerLogger = null;
+    static Logger apiLogger = null;
 }

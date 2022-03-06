@@ -23,10 +23,11 @@ import org.eclipse.jetty.websocket.server.JettyWebSocketServerContainer;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer.Configurator;
 import org.glassfish.jersey.server.ServerProperties;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.HashSet;
 import com.cloudpta.graphql.subscriptions.CPTASubscriptionHandlerSocket;
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.core.Application;
 
@@ -34,11 +35,11 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
 {       
     protected abstract String getRESTContextPath();
     protected abstract String getRESTAPISubPath();
-    protected abstract Set<Class<?>> getRESTAPIHandlers();
+    protected abstract void addRESTAPIHandlers(Set<Class<?>> listOfRESTAPIHandlers);
     protected abstract String getFrontendContextPath();
 
     public abstract String getWebsocketAPIContextPath();
-    public abstract Map<String, Class<? extends CPTASubscriptionHandlerSocket>> getWebsocketHandlers();
+    public abstract void addWebsocketHandlers(Map<String, Class<? extends CPTASubscriptionHandlerSocket>> listOfWebsocketHandlers);
 
     @Override
     public Map<String, Object> getProperties() 
@@ -56,8 +57,9 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
     @Override
     public Set<Class<?>> getClasses()
     {
-        final Set<Class<?>> classes = getRESTAPIHandlers();
-        return classes;
+        final Set<Class<?>> listOfRESTAPIHandlers  = new HashSet<>();
+        addRESTAPIHandlers(listOfRESTAPIHandlers);
+        return listOfRESTAPIHandlers;
     }
       
     @Override
@@ -66,7 +68,8 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
         Class<?>[] parameterList = new Class<?>[]{};
 
         // get the handlers
-        Map<String, Class<? extends CPTASubscriptionHandlerSocket>> websocketHandlers = getWebsocketHandlers();
+        Map<String, Class<? extends CPTASubscriptionHandlerSocket>> websocketHandlers = new HashMap<>();
+        addWebsocketHandlers(websocketHandlers);
         Set<String> paths = websocketHandlers.keySet();
      
         for(String currentPath : paths)

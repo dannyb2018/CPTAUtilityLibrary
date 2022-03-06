@@ -66,6 +66,17 @@ import jakarta.json.JsonReader;
 public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter implements JettyWebSocketCreator
 {
     protected abstract Object returnNewInstance();
+    // This should return any existing graph ql build or null if there is not one
+    protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
+    protected abstract TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException;
+    protected abstract GraphQL getExistingSubscriptionBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException;
+
+    // These are the inputs to the various schemas
+    protected abstract InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException;
+    protected abstract InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException;
+
+    // get handlers
+    protected abstract List<CPTASubscriptionHandler> getHandlers();
 
     @Override
     public Object createWebSocket(JettyServerUpgradeRequest req, JettyServerUpgradeResponse resp) 
@@ -110,11 +121,8 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
 
     protected void handleInitialiseSubscriptionRequest(JsonObject queryAsJson) throws IOException
     {
-        // Get id
-        String id = queryAsJson.getString(CPTAGraphQLAPIConstants.PAYLOAD_ID);
         // Get the payload
-        JsonObject requestParamsForThisSubscription = queryAsJson.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD); 
-        requestParamsForSubscriptions.put(id, requestParamsForThisSubscription);
+        requestParamsForSubscription = queryAsJson.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD); 
         // send ack back
         socketSession.getRemote().sendString(CPTAGraphQLAPIConstants.CONNECTION_INIT_RESPONSE);
     }
@@ -140,8 +148,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         // Build the context for the query
         GraphQLContext contextForQuery = GraphQLContext.newContext().build();
         // Get the request params
-        JsonObject requestParams = this.requestParamsForSubscriptions.get(id);
-        Map<String, String> socketRequestDetails = convertRequestToMap(requestParams, socketSession);
+        Map<String, String> socketRequestDetails = convertRequestToMap(requestParamsForSubscription, socketSession);
         initialiseContext(contextForQuery, socketRequestDetails, graphQLQuery, operationName, variablesAsJsonObject);
 
         // Set up all the graphql if need to
@@ -201,10 +208,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         String id = queryAsJson.getString(CPTAGraphQLAPIConstants.PAYLOAD_ID);
         // Stop the subscription
         subscription.stop();
-        subscription = null;
-
-        // remove request params
-        requestParamsForSubscriptions.remove(id);        
+        subscription = null;      
     }
 
     protected void handleIncomingMessage(String queryAsString) 
@@ -342,6 +346,10 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
                 // Then with subscriptions schema
                 schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
                 String subscriptionsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                // Need dummy query type
+                String dummyQuerySchema = "type Query{ \n" +
+                    "dummyQuery:String \n" +
+                "}";
                 // Finally schema to bring it all together
                 String holderSchema = CPTAGraphQLAPIConstants.SUBSCRIPTION_HOLDER_SCHEMA;
 
@@ -349,12 +357,14 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
                 SchemaParser schemaParser = new SchemaParser();
                 TypeDefinitionRegistry apiTypeDefinitionRegistry = schemaParser.parse(apiTypesSchema);
                 TypeDefinitionRegistry subscriptionTypeDefinitionRegistry = schemaParser.parse(subscriptionsSchema);
+                TypeDefinitionRegistry dummyQueryDefinitionRegistry = schemaParser.parse(dummyQuerySchema);
                 TypeDefinitionRegistry schemaTypeDefinitionRegistry = schemaParser.parse(holderSchema);
 
                 // Merge them
                 mergedTypeDefinitionRegistry = new TypeDefinitionRegistry();
                 mergedTypeDefinitionRegistry.merge(apiTypeDefinitionRegistry);
                 mergedTypeDefinitionRegistry.merge(subscriptionTypeDefinitionRegistry);
+                mergedTypeDefinitionRegistry.merge(dummyQueryDefinitionRegistry);              
                 mergedTypeDefinitionRegistry.merge(schemaTypeDefinitionRegistry);              
         }
 
@@ -399,18 +409,6 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         
         return subscriptionBuild;
     }
-
-    // This should return any existing graph ql build or null if there is not one
-    protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
-    protected abstract TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException;
-    protected abstract GraphQL getExistingSubscriptionBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException;
-
-    // These are the inputs to the various schemas
-    protected abstract InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException;
-    protected abstract InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException;
-
-    // get handlers
-    protected abstract List<CPTASubscriptionHandler> getHandlers();
     
     protected void addTypeResolversForSubscription(graphql.schema.idl.RuntimeWiring.Builder subscriptionRuntimeWiringBuilder, GraphQLContext context) throws CPTAException
     {
@@ -434,7 +432,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         // for each handler add data handlers
         for(CPTASubscriptionHandler currentHandler: handlers)
         {
-            currentHandler.getSubcriptionsDataFetchers(context);
+            currentHandler.addDataFetcherForSubscription(null, allDataFetchers, context);
         }
 
         return allDataFetchers;
@@ -442,7 +440,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
 
     protected CPTASubscriptionFeed subscription = null;
     //protected Map<String, QPSubscriptionFeed> subscriptions = new ConcurrentHashMap<>();
-    protected Map<String, JsonObject> requestParamsForSubscriptions = new HashMap<>();
-    Logger socketLogger = CPTALogger.getLogger();    
+    protected JsonObject requestParamsForSubscription = null;
+    protected Logger socketLogger = CPTALogger.getLogger();    
     protected Session socketSession;    
 }

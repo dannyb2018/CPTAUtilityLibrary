@@ -103,22 +103,26 @@ public abstract class CPTAAPIServer
     protected void addRestHandler(HandlerCollection contexts)
     {
         // Get instance of api server configuration
-        CPTAAPIServerConfiguration RestAPIConfiguration = getAPIServerConfiguration(); 
+        CPTAAPIServerConfiguration restAPIConfiguration = getAPIServerConfiguration(); 
+
         ServletHolder servletHolder = new ServletHolder(org.glassfish.jersey.servlet.ServletContainer.class);  
-        servletHolder.setInitParameter("jakarta.ws.rs.Application", RestAPIConfiguration.getClass().getName() );
+        servletHolder.setInitParameter("jakarta.ws.rs.Application", restAPIConfiguration.getClass().getName() );
         ServletContextHandler restAPIHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        String apiContextPath = RestAPIConfiguration.getContextPath();  
+        String apiContextPath = restAPIConfiguration.getRESTContextPath();  
         restAPIHandler.setContextPath(apiContextPath);
-        String apiSubpath = RestAPIConfiguration.getAPISubPath();
+        String apiSubpath = restAPIConfiguration.getRESTAPISubPath();
         restAPIHandler.addServlet(servletHolder, apiSubpath);
         contexts.addHandler(restAPIHandler);
     }
 
     protected void addFrontendHandler(HandlerCollection contexts)
     {
+        // Get instance of frontend server configuration
+        CPTAAPIServerConfiguration frontendConfiguration = getAPIServerConfiguration(); 
+
         serverLogger.info("frontend files root director " + frontEndLocation);        
         ServletContextHandler frontend = new ServletContextHandler();
-        frontend.setContextPath("/QPTraderConsole");            
+        frontend.setContextPath(frontendConfiguration.getFrontendContextPath());            
         ServletHolder frontendServletHolder = new ServletHolder(DefaultServlet.class);
         System.out.println(frontEndLocation);
         frontend.setResourceBase(frontEndLocation);
@@ -128,8 +132,11 @@ public abstract class CPTAAPIServer
 
     protected void addWebsocketsHandler(HandlerCollection contexts)
     {
+        // Get instance of frontend server configuration
+        CPTAAPIServerConfiguration websocketAPIConfiguration = getAPIServerConfiguration(); 
+
         ServletContextHandler webSocketContext = new ServletContextHandler();
-        webSocketContext.setContextPath("/QPAPIWSServer/GraphQL/api");            
+        webSocketContext.setContextPath(websocketAPIConfiguration.getWebsocketAPIContextPath());            
         contexts.addHandler(webSocketContext);            
         JettyWebSocketServletContainerInitializer.configure(webSocketContext, null);
         

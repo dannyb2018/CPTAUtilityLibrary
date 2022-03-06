@@ -60,7 +60,7 @@ public class CPTALogger
             ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
             Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
-            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("qpapiserver"));
+            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
             
             // get rid of any old appenders
             apiServerLogger.detachAndStopAllAppenders();
@@ -169,6 +169,7 @@ public class CPTALogger
             ContextInitializer contextInitializer = new ContextInitializer(loggerContext);
             Logger rootLogger = (ch.qos.logback.classic.Logger)loggerContext.getLogger("ROOT");
             rootLogger.setLevel(Level.OFF);
+            apiServerLogger = (ch.qos.logback.classic.Logger)((rootLogger.getLoggerContext()).getLogger("cpta"));
             
             // get rid of any old appenders
             apiServerLogger.detachAndStopAllAppenders();

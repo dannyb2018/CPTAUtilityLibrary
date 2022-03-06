@@ -19,17 +19,26 @@ limitations under the License.
 */
 package com.cloudpta.embedded_jetty;
 
+import org.eclipse.jetty.websocket.server.JettyWebSocketServerContainer;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer.Configurator;
 import org.glassfish.jersey.server.ServerProperties;
 import java.util.Map;
 import java.util.Set;
+import com.cloudpta.graphql.subscriptions.CPTASubscriptionHandlerSocket;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.core.Application;
 
-public abstract class CPTAAPIServerConfiguration extends Application 
+public abstract class CPTAAPIServerConfiguration extends Application implements Configurator
 {       
-    protected abstract String getContextPath();
-    protected abstract String getAPISubPath();
-    protected abstract Set<Class<?>> getAPIHandlers();
+    protected abstract String getRESTContextPath();
+    protected abstract String getRESTAPISubPath();
+    protected abstract Set<Class<?>> getRESTAPIHandlers();
+    protected abstract String getFrontendContextPath();
+
+    public abstract String getWebsocketAPIContextPath();
+    public abstract Map<String, Class<? extends CPTASubscriptionHandlerSocket>> getWebsocketHandlers();
 
     @Override
     public Map<String, Object> getProperties() 
@@ -47,7 +56,33 @@ public abstract class CPTAAPIServerConfiguration extends Application
     @Override
     public Set<Class<?>> getClasses()
     {
-        final Set<Class<?>> classes = getAPIHandlers();
+        final Set<Class<?>> classes = getRESTAPIHandlers();
         return classes;
-    }     
+    }
+      
+    @Override
+    public void accept(ServletContext servletContext, JettyWebSocketServerContainer container) 
+    {
+        Class<?>[] parameterList = new Class<?>[]{};
+
+        // get the handlers
+        Map<String, Class<? extends CPTASubscriptionHandlerSocket>> websocketHandlers = getWebsocketHandlers();
+        Set<String> paths = websocketHandlers.keySet();
+     
+        for(String currentPath : paths)
+        {
+            try
+            {
+                Class<? extends CPTASubscriptionHandlerSocket> handlerClass = websocketHandlers.get(currentPath);
+                Constructor<? extends CPTASubscriptionHandlerSocket> handlerClassConstructor = handlerClass.getConstructor(parameterList);
+                CPTASubscriptionHandlerSocket handler = handlerClassConstructor.newInstance();
+                container.addMapping(currentPath, handler);
+            }
+            catch(Exception E)
+            {
+                E.printStackTrace();
+            }
+        }
+           
+    }
 }

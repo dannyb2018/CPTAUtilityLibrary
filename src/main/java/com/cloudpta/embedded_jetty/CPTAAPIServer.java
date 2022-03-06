@@ -105,6 +105,7 @@ public abstract class CPTAAPIServer
         // Get instance of api server configuration
         CPTAAPIServerConfiguration restAPIConfiguration = getAPIServerConfiguration(); 
 
+        // Set up rest api
         ServletHolder servletHolder = new ServletHolder(org.glassfish.jersey.servlet.ServletContainer.class);  
         servletHolder.setInitParameter("jakarta.ws.rs.Application", restAPIConfiguration.getClass().getName() );
         ServletContextHandler restAPIHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -120,6 +121,7 @@ public abstract class CPTAAPIServer
         // Get instance of frontend server configuration
         CPTAAPIServerConfiguration frontendConfiguration = getAPIServerConfiguration(); 
 
+        // set up frontend pages
         serverLogger.info("frontend files root director " + frontEndLocation);        
         ServletContextHandler frontend = new ServletContextHandler();
         frontend.setContextPath(frontendConfiguration.getFrontendContextPath());            
@@ -132,16 +134,14 @@ public abstract class CPTAAPIServer
 
     protected void addWebsocketsHandler(HandlerCollection contexts)
     {
-        // Get instance of frontend server configuration
+        // Get instance of websocket api server configuration
         CPTAAPIServerConfiguration websocketAPIConfiguration = getAPIServerConfiguration(); 
 
+        // set up websockets api
         ServletContextHandler webSocketContext = new ServletContextHandler();
         webSocketContext.setContextPath(websocketAPIConfiguration.getWebsocketAPIContextPath());            
         contexts.addHandler(webSocketContext);            
-        JettyWebSocketServletContainerInitializer.configure(webSocketContext, null);
-        
-    //    QPStructuredProductsAPIServerWebsocketConfiguration.AddWebSocketServlets(webSocketContext);
-
+        JettyWebSocketServletContainerInitializer.configure(webSocketContext, websocketAPIConfiguration);
     }
 
     protected void run() throws Exception

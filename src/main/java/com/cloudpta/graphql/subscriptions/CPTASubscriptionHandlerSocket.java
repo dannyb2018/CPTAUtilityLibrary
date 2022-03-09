@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
+import com.cloudpta.graphql.common.CPTAGraphQLHandler;
+import com.cloudpta.graphql.common.CPTAGraphQLQueryType;
 import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
@@ -76,7 +78,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
     protected abstract InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException;
 
     // get handlers
-    protected abstract List<CPTASubscriptionHandler> getHandlers();
+    protected abstract List<CPTAGraphQLHandler> getHandlers();
 
     @Override
     public Object createWebSocket(JettyServerUpgradeRequest req, JettyServerUpgradeResponse resp) 
@@ -413,12 +415,12 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
     protected void addTypeResolversForSubscription(graphql.schema.idl.RuntimeWiring.Builder subscriptionRuntimeWiringBuilder, GraphQLContext context) throws CPTAException
     {
         // get the handlers
-        List<CPTASubscriptionHandler> handlers = getHandlers();
+        List<CPTAGraphQLHandler> handlers = getHandlers();
 
         // for each handler add type resolvers
-        for(CPTASubscriptionHandler currentHandler : handlers)
+        for(CPTAGraphQLHandler currentHandler : handlers)
         {
-            currentHandler.addTypeResolversForSubscriptions(subscriptionRuntimeWiringBuilder, context);
+            currentHandler.addTypeResolversForQueryType(CPTAGraphQLQueryType.SUBSCRIPTION, subscriptionRuntimeWiringBuilder, context);
         }
     }
 
@@ -427,12 +429,13 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         Map<String, DataFetcher> allDataFetchers = new ConcurrentHashMap<>();
 
         // Get all the handlers
-        List<CPTASubscriptionHandler> handlers = getHandlers();
+        List<CPTAGraphQLHandler> handlers = getHandlers();
         
         // for each handler add data handlers
-        for(CPTASubscriptionHandler currentHandler: handlers)
+        for(CPTAGraphQLHandler currentHandler: handlers)
         {
-            currentHandler.addDataFetcherForSubscription(null, allDataFetchers, context);
+            Map<String, DataFetcher> dataFetchersForHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.SUBSCRIPTION, context);
+            allDataFetchers.putAll(dataFetchersForHandler);
         }
 
         return allDataFetchers;

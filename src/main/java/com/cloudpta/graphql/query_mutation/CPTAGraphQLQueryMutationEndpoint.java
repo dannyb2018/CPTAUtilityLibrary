@@ -120,7 +120,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             JsonObject queryObject = reader.readObject();             
             // Get operation name
             String operationName = null;
-            if(false == queryObject.isNull(CPTAGraphQLAPIConstants.OPERATION_NAME))
+            if(null != queryObject.get(CPTAGraphQLAPIConstants.OPERATION_NAME))
             {
                 operationName = queryObject.getString(CPTAGraphQLAPIConstants.OPERATION_NAME);
             }

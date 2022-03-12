@@ -75,6 +75,16 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
         // Default is that there are no custom type definitions so do nothing
     }
 
+    // default is no mutations or subscriptions
+    protected InputStream getMutationSchemaStream(GraphQLContext context) throws CPTAException
+    {
+        return null;
+    }
+    protected InputStream getSubscriptionsSchemaStream(GraphQLContext context) throws CPTAException
+    {
+        return null;
+    }
+
     // This should return any existing graph ql build or null if there is not one
     protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
     protected abstract TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException;
@@ -87,9 +97,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
 
     // These are the inputs to the various schemas
     protected abstract InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException;
-    protected abstract InputStream getMutationSchemaStream(GraphQLContext context) throws CPTAException;
     protected abstract InputStream getQueriesSchemaStream(GraphQLContext context) throws CPTAException;
-    protected abstract InputStream getSubscriptionsSchemaStream(GraphQLContext context) throws CPTAException;
 
     @Path("/")
     @POST
@@ -271,6 +279,8 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 InputStream queriesSchemaStream = getQueriesSchemaStream(context);
                 InputStream subscriptionsSchemaStream = getSubscriptionsSchemaStream(context);
 
+                // We are going to need a holder schema to say what types of queries are there
+                String holderSchema = "schema {\n" + "query:Query \n";
                 // Start with the types schema
                 BufferedReader schemaStream = new BufferedReader(new InputStreamReader(typesSchemaStream, StandardCharsets.UTF_8));
                 String apiTypesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
@@ -278,13 +288,25 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 schemaStream = new BufferedReader(new InputStreamReader(queriesSchemaStream, StandardCharsets.UTF_8));
                 String queriesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
                 // Then with mutations schema
-                schemaStream = new BufferedReader(new InputStreamReader(mutationsSchemaStream, StandardCharsets.UTF_8));
-                String mutationsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                String mutationsSchema = "";
+                // If there are mutations add to list of types of queries
+                if(null != mutationsSchemaStream)
+                {
+                    holderSchema = holderSchema + "mutation:Mutation \n";
+                    schemaStream = new BufferedReader(new InputStreamReader(mutationsSchemaStream, StandardCharsets.UTF_8));
+                    mutationsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                }
                 // Then with subscriptions schema
-                schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
-                String subscriptionsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                String subscriptionsSchema = "";
+                // If there are subscriptions add to list of types of queries
+                if(null != subscriptionsSchemaStream)
+                {
+                    holderSchema = holderSchema + "subscription:Subscription \n";
+                    schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
+                    subscriptionsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                }
                 // Finally schema to bring it all together
-                String holderSchema = CPTAGraphQLAPIConstants.MUTATION_QUERY_HOLDER_SCHEMA;
+                holderSchema = holderSchema + "}";
 
                 // Parse these schemas
                 SchemaParser schemaParser = new SchemaParser();

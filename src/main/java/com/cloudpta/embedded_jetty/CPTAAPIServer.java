@@ -20,6 +20,7 @@ limitations under the License.
 package com.cloudpta.embedded_jetty;
 
 import com.cloudpta.utilites.CPTAUtilityConstants;
+import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
 import com.cloudpta.utilites.persistence.CPTADatabaseConnectionManager;
 import com.cloudpta.utilites.persistence.CPTADatabaseConstants;
@@ -29,6 +30,8 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
+
+import java.sql.SQLException;
 import java.util.Properties;
 import ch.qos.logback.classic.Logger;
 
@@ -61,8 +64,14 @@ public abstract class CPTAAPIServer
 
         // Set up logger off env variables
         CPTALogger.initialise();
-        serverLogger = CPTALogger.getLogger();
-    
+        serverLogger = CPTALogger.getLogger();  
+        
+        // setup db
+        setupDatabase();
+    } 
+
+    protected void setupDatabase() throws CPTAException, SQLException
+    {
         // If there is a database
         if( null != databaseConnectionName)
         {
@@ -98,7 +107,8 @@ public abstract class CPTAAPIServer
                                                             connectionProperties
                                                             );    
         }
-    } 
+
+    }
 
     protected void addRestHandler(HandlerCollection contexts)
     {

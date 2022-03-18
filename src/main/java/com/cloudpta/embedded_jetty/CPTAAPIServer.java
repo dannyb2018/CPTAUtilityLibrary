@@ -30,7 +30,6 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
-
 import java.sql.SQLException;
 import java.util.Properties;
 import ch.qos.logback.classic.Logger;

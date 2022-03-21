@@ -20,12 +20,13 @@ limitations under the License.
 package com.cloudpta.graphql.common;
 
 import java.util.Map;
+import com.cloudpta.utilites.exceptions.CPTAException;
 import graphql.GraphQLContext;
 import graphql.schema.DataFetchingEnvironment;
 
 public abstract class CPTAGraphQLInput 
 {
-    public void parseInput(DataFetchingEnvironment input)
+    public void parseInput(DataFetchingEnvironment input) throws CPTAException
     {
         // Get the context for input
         getContext(input);
@@ -45,7 +46,7 @@ public abstract class CPTAGraphQLInput
         inputContext = input.getContext();
     }
 
-    protected abstract void parseArguments(Map<String, Object> argumentsAsMap);
+    protected abstract void parseArguments(Map<String, Object> argumentsAsMap) throws CPTAException;
 
     protected GraphQLContext inputContext = null;
 }

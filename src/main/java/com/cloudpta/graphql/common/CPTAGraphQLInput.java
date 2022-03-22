@@ -33,6 +33,7 @@ public abstract class CPTAGraphQLInput
 
         // get the arguments themselves
         Map<String, Object> argumentsAsMap = input.getArguments();
+        argumentsAsMap = (Map<String, Object>)argumentsAsMap.get("Input");
         parseArguments(argumentsAsMap);
     }    
 

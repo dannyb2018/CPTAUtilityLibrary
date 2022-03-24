@@ -191,7 +191,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
         {
             String currentHeaderName = headerNames.next();
             String currentHeaderValue = httpRequest.getHeader(currentHeaderName);
-            socketRequestDetails.put(currentHeaderName, currentHeaderValue);
+            socketRequestDetails.put(currentHeaderName.toLowerCase(), currentHeaderValue);
         }
 
         // Add all the cookies

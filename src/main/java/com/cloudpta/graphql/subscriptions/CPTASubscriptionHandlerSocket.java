@@ -278,7 +278,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
         {
             String currentHeaderName = headerNames.next();
             String currentHeaderValue = httpRequest.getString(currentHeaderName);
-            socketRequestDetails.put(currentHeaderName, currentHeaderValue);
+            socketRequestDetails.put(currentHeaderName.toLowerCase(), currentHeaderValue);
         }
 
         // Add all the cookies

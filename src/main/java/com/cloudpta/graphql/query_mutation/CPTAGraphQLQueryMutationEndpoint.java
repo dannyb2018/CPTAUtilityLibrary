@@ -286,7 +286,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 String apiTypesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
                 // Then with queries schema
                 schemaStream = new BufferedReader(new InputStreamReader(queriesSchemaStream, StandardCharsets.UTF_8));
-                String queriesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                String queriesSchema = " type Query { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
                 // Then with mutations schema
                 String mutationsSchema = "";
                 // If there are mutations add to list of types of queries
@@ -294,7 +294,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 {
                     holderSchema = holderSchema + "mutation:Mutation \n";
                     schemaStream = new BufferedReader(new InputStreamReader(mutationsSchemaStream, StandardCharsets.UTF_8));
-                    mutationsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                    mutationsSchema = " type Mutation { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
                 }
                 // Then with subscriptions schema
                 String subscriptionsSchema = "";
@@ -303,7 +303,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 {
                     holderSchema = holderSchema + "subscription:Subscription \n";
                     schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
-                    subscriptionsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                    subscriptionsSchema = " type Subscription { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
                 }
                 // Finally schema to bring it all together
                 holderSchema = holderSchema + "}";

@@ -347,7 +347,7 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
                 String apiTypesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
                 // Then with subscriptions schema
                 schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
-                String subscriptionsSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                String subscriptionsSchema = " type Subscription { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
                 // Need dummy query type
                 String dummyQuerySchema = "type Query{ \n" +
                     "dummyQuery:String \n" +

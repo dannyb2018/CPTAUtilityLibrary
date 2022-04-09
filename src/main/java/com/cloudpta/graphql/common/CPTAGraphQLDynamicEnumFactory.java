@@ -11,7 +11,6 @@
 package com.cloudpta.graphql.common;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,7 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
                                        (
                                        Class<A> type,
                                        String description, 
-                                       List<String> values, 
+                                       List<A> values, 
                                        Map<String, String> valueDescriptions
                                        ) 
                                        throws 
@@ -54,18 +53,20 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         enumValues = (A[])Array.newInstance(type, values.size());
 
         // create the enum type definition for this enum
-        EnumTypeDefinition.Builder dynamicEnumTypeDefinitionBuilder = EnumTypeDefinition.newEnumTypeDefinition();
+        // Get the name of the enum
+        String enumName = type.getSimpleName();
+        EnumTypeDefinition.Builder dynamicEnumTypeDefinitionBuilder = EnumTypeDefinition.newEnumTypeDefinition().name(enumName);
         // start by creating list of enum definitions
         List<EnumValueDefinition> dynamicEnumTypeValueDefinitions = new ArrayList<>();
         for(int i = 0; i < numberOfValues;  i++)
         {
             // Get current value
-            String currentValue = values.get(i);
+            A currentValue = values.get(i);
 
             // build the current enum value
-            EnumValueDefinition.Builder currentValueBuilder = EnumValueDefinition.newEnumValueDefinition().name(currentValue);
+            EnumValueDefinition.Builder currentValueBuilder = EnumValueDefinition.newEnumValueDefinition().name(currentValue.name());
             // if there is a description add it
-            String currentValueDescriptionAsString = valueDescriptions.get(currentValue);
+            String currentValueDescriptionAsString = valueDescriptions.get(currentValue.name());
             if(null != currentValueDescriptionAsString)
             {
                 Description currentValueDescription = new Description(currentValueDescriptionAsString, null, false);
@@ -76,10 +77,7 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
             EnumValueDefinition currentValueDefinition = currentValueBuilder.build();
             dynamicEnumTypeValueDefinitions.add(currentValueDefinition);
 
-            // Add to enum values too
-            Class<?>[] parameterList = new Class<?>[]{Integer.TYPE, String.class};
-            Constructor<A> constructor = type.getDeclaredConstructor(parameterList);
-            enumValues[i] = constructor.newInstance(new Object[]{i, currentValue});
+            enumValues[i] = currentValue;
         }
 
         // Create the the enum type definition description if there is one

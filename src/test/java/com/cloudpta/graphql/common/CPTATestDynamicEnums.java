@@ -34,10 +34,10 @@ public class CPTATestDynamicEnums
     @Test
     public void testDynamicEnumFactory() throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
-        List<String> values = new ArrayList<>();
-        values.add("RED");
-        values.add("BLUE");
-        values.add("GREEN");
+        List<Colour> values = new ArrayList<>();
+        values.add(new Colour(0, "RED"));
+        values.add(new Colour(1, "BLUE"));
+        values.add(new Colour(2, "GREEN"));
         Map<String, String> valueDescriptions = new HashMap<>();
         valueDescriptions.put("BLUE", "Blue colour");
         ColourFactory cf = new ColourFactory(values, valueDescriptions);
@@ -60,7 +60,7 @@ class Colour extends CPTAGraphQLDynamicEnum<Colour>
 class ColourFactory extends CPTAGraphQLDynamicEnumFactory<Colour>
 {
 
-    public ColourFactory(List<String> values,
+    public ColourFactory(List<Colour> values,
             Map<String, String> valueDescriptions) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         super(Colour.class, "Supported Colours", values, valueDescriptions);

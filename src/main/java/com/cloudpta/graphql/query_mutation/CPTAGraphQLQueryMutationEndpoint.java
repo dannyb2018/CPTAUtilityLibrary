@@ -279,14 +279,29 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 InputStream queriesSchemaStream = getQueriesSchemaStream(context);
                 InputStream subscriptionsSchemaStream = getSubscriptionsSchemaStream(context);
 
+                // This is the type definition registry that merges all the others
+                mergedTypeDefinitionRegistry = new TypeDefinitionRegistry();
+
+                // Parse these schemas
+                SchemaParser schemaParser = new SchemaParser();
+
                 // We are going to need a holder schema to say what types of queries are there
                 String holderSchema = "schema {\n" + "query:Query \n";
                 // Start with the types schema
                 BufferedReader schemaStream = new BufferedReader(new InputStreamReader(typesSchemaStream, StandardCharsets.UTF_8));
                 String apiTypesSchema = schemaStream.lines().collect(Collectors.joining("\n"));
+                // Parse type schema
+                TypeDefinitionRegistry apiTypeDefinitionRegistry = schemaParser.parse(apiTypesSchema);
+                // add to merged type registry
+                mergedTypeDefinitionRegistry.merge(apiTypeDefinitionRegistry);
                 // Then with queries schema
                 schemaStream = new BufferedReader(new InputStreamReader(queriesSchemaStream, StandardCharsets.UTF_8));
                 String queriesSchema = " type Query { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
+                // Parse query schema
+                TypeDefinitionRegistry queryTypeDefinitionRegistry = schemaParser.parse(queriesSchema);
+                // add to merged type registry
+                mergedTypeDefinitionRegistry.merge(queryTypeDefinitionRegistry);
+
                 // Then with mutations schema
                 String mutationsSchema = "";
                 // If there are mutations add to list of types of queries
@@ -295,6 +310,10 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                     holderSchema = holderSchema + "mutation:Mutation \n";
                     schemaStream = new BufferedReader(new InputStreamReader(mutationsSchemaStream, StandardCharsets.UTF_8));
                     mutationsSchema = " type Mutation { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
+                    // Parse mutation schema
+                    TypeDefinitionRegistry mutationTypeDefinitionRegistry = schemaParser.parse(mutationsSchema);
+                    // add to merged type registry
+                    mergedTypeDefinitionRegistry.merge(mutationTypeDefinitionRegistry);
                 }
                 // Then with subscriptions schema
                 String subscriptionsSchema = "";
@@ -304,25 +323,18 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                     holderSchema = holderSchema + "subscription:Subscription \n";
                     schemaStream = new BufferedReader(new InputStreamReader(subscriptionsSchemaStream, StandardCharsets.UTF_8));
                     subscriptionsSchema = " type Subscription { " + schemaStream.lines().collect(Collectors.joining("\n")) + " } ";
+                    // Parse subscription schema
+                    TypeDefinitionRegistry subscriptionTypeDefinitionRegistry = schemaParser.parse(subscriptionsSchema);    
+                    // add to merged type registry
+                    mergedTypeDefinitionRegistry.merge(subscriptionTypeDefinitionRegistry);              
                 }
                 // Finally schema to bring it all together
                 holderSchema = holderSchema + "}";
-
-                // Parse these schemas
-                SchemaParser schemaParser = new SchemaParser();
-                TypeDefinitionRegistry apiTypeDefinitionRegistry = schemaParser.parse(apiTypesSchema);
-                TypeDefinitionRegistry mutationTypeDefinitionRegistry = schemaParser.parse(mutationsSchema);
-                TypeDefinitionRegistry queryTypeDefinitionRegistry = schemaParser.parse(queriesSchema);
-                TypeDefinitionRegistry subscriptionTypeDefinitionRegistry = schemaParser.parse(subscriptionsSchema);
+                // parse placeholder schema
                 TypeDefinitionRegistry schemaTypeDefinitionRegistry = schemaParser.parse(holderSchema);
-
-                // Merge them
-                mergedTypeDefinitionRegistry = new TypeDefinitionRegistry();
-                mergedTypeDefinitionRegistry.merge(apiTypeDefinitionRegistry);
-                mergedTypeDefinitionRegistry.merge(mutationTypeDefinitionRegistry);
-                mergedTypeDefinitionRegistry.merge(queryTypeDefinitionRegistry);
-                mergedTypeDefinitionRegistry.merge(subscriptionTypeDefinitionRegistry);              
+                // add to merged type registry
                 mergedTypeDefinitionRegistry.merge(schemaTypeDefinitionRegistry);              
+
 
                 // Add custom type definitions
                 addCustomTypeDefinitionsToRegistry(context, mergedTypeDefinitionRegistry);

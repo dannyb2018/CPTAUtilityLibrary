@@ -39,7 +39,7 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
     protected abstract String getFrontendContextPath();
 
     public abstract String getWebsocketAPIContextPath();
-    public abstract void addWebsocketHandlers(Map<String, Class<? extends CPTASubscriptionHandlerSocket>> listOfWebsocketHandlers);
+    public abstract void addWebsocketHandlers(Map<String, Class<? extends CPTAWebSocket>> listOfWebsocketHandlers);
 
     @Override
     public Map<String, Object> getProperties() 
@@ -68,7 +68,7 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
         Class<?>[] parameterList = new Class<?>[]{};
 
         // get the handlers
-        Map<String, Class<? extends CPTASubscriptionHandlerSocket>> websocketHandlers = new HashMap<>();
+        Map<String, Class<? extends CPTAWebSocket>> websocketHandlers = new HashMap<>();
         addWebsocketHandlers(websocketHandlers);
         Set<String> paths = websocketHandlers.keySet();
      
@@ -76,9 +76,9 @@ public abstract class CPTAAPIServerConfiguration extends Application implements 
         {
             try
             {
-                Class<? extends CPTASubscriptionHandlerSocket> handlerClass = websocketHandlers.get(currentPath);
-                Constructor<? extends CPTASubscriptionHandlerSocket> handlerClassConstructor = handlerClass.getConstructor(parameterList);
-                CPTASubscriptionHandlerSocket handler = handlerClassConstructor.newInstance();
+                Class<? extends CPTAWebSocket> handlerClass = websocketHandlers.get(currentPath);
+                Constructor<? extends CPTAWebSocket> handlerClassConstructor = handlerClass.getConstructor(parameterList);
+                CPTAWebSocket handler = handlerClassConstructor.newInstance();
                 container.addMapping(currentPath, handler);
             }
             catch(Exception E)

@@ -36,15 +36,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
+import com.cloudpta.embedded_jetty.CPTAWebSocket;
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
 import com.cloudpta.graphql.common.CPTAGraphQLHandler;
 import com.cloudpta.graphql.common.CPTAGraphQLQueryType;
 import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketAdapter;
-import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest;
-import org.eclipse.jetty.websocket.server.JettyServerUpgradeResponse;
-import org.eclipse.jetty.websocket.server.JettyWebSocketCreator;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 import ch.qos.logback.classic.Logger;
@@ -65,7 +62,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 
-public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter implements JettyWebSocketCreator
+public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
 {
     protected abstract Object returnNewInstance();
     // This should return any existing graph ql build or null if there is not one
@@ -79,47 +76,6 @@ public abstract class CPTASubscriptionHandlerSocket extends WebSocketAdapter imp
 
     // get handlers
     protected abstract List<CPTAGraphQLHandler> getHandlers();
-
-    @Override
-    public Object createWebSocket(JettyServerUpgradeRequest req, JettyServerUpgradeResponse resp) 
-    {
-        // get the requested protocals in the req
-        List<String> requestedSubprotocols = req.getSubProtocols();
-        for(String currentSubprotocol : requestedSubprotocols)
-        {
-            resp.setAcceptedSubProtocol(currentSubprotocol);
-        }
-        
-        return returnNewInstance();
-    }
-    
-    @Override
-    public void onWebSocketConnect(Session session)
-    {
-        super.onWebSocketConnect(session);
-        handleConnected(session);         
-    }
-
-    @Override
-    public void onWebSocketText(String message)
-    {
-        super.onWebSocketText(message);
-        handleIncomingMessage(message);
-    }
-
-    @Override
-    public void onWebSocketClose(int statusCode, String reason)
-    {
-        super.onWebSocketClose(statusCode, reason);
-        handleClose(statusCode, reason);
-    }
-
-    @Override
-    public void onWebSocketError(Throwable cause)
-    {
-        super.onWebSocketError(cause);
-        handleError(cause); 
-    }
 
     protected void handleInitialiseSubscriptionRequest(JsonObject queryAsJson) throws IOException
     {

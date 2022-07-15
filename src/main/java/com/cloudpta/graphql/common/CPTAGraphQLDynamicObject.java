@@ -31,7 +31,7 @@ public abstract class CPTAGraphQLDynamicObject
     {
         // create the object type definition for this object
         // Get the name of the object
-        String objectName = getClass().getSimpleName();
+        String objectName = getGraphQLName();
         GraphQLObjectType.Builder dynamicObjectTypeDefinitionBuilder = GraphQLObjectType.newObject().name(objectName);
         // add description
         String description = getDescription();
@@ -52,6 +52,7 @@ public abstract class CPTAGraphQLDynamicObject
         apiTypeDefinitionRegistry.add(typeDefinitionOfThisObject.getDefinition()); 
     }
     
+    protected abstract String getGraphQLName();
     protected abstract List<GraphQLFieldDefinition> getFieldDefinitions();
     protected abstract String getDescription();
     protected abstract GraphQLInterfaceType getInterface(TypeDefinitionRegistry apiTypeDefinitionRegistry);

@@ -20,9 +20,11 @@ limitations under the License.
 package com.cloudpta.graphql.common;
 
 import java.util.List;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
+import graphql.language.Description;
+import graphql.language.FieldDefinition;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.TypeName;
+import graphql.language.ObjectTypeDefinition.Builder;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
 public abstract class CPTAGraphQLDynamicObject 
@@ -32,28 +34,30 @@ public abstract class CPTAGraphQLDynamicObject
         // create the object type definition for this object
         // Get the name of the object
         String objectName = getGraphQLName();
-        GraphQLObjectType.Builder dynamicObjectTypeDefinitionBuilder = GraphQLObjectType.newObject().name(objectName);
+        Builder objectDefinitionBuilder = ObjectTypeDefinition.newObjectTypeDefinition();
+        objectDefinitionBuilder.name(objectName);
         // add description
-        String description = getDescription();
-        dynamicObjectTypeDefinitionBuilder.description(description);
+        String descriptionContent = getDescription();
+        Description description = new Description(descriptionContent, null, false);
+        objectDefinitionBuilder.description(description);
         // If there is a non-null interface
-        GraphQLInterfaceType possibleInterface = getInterface(apiTypeDefinitionRegistry);
+        TypeName possibleInterface = getInterface(apiTypeDefinitionRegistry);
         if(null != possibleInterface)
         {
-            dynamicObjectTypeDefinitionBuilder.withInterface(possibleInterface);
+            objectDefinitionBuilder.implementz(possibleInterface);
         }
 
         // Add fields
-        List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions();
-        dynamicObjectTypeDefinitionBuilder.fields(fieldDefinitions);
+        List<FieldDefinition> fieldDefinitions = getFieldDefinitions();
+        objectDefinitionBuilder.fieldDefinitions(fieldDefinitions);
 
         // add to api type registry
-        GraphQLObjectType typeDefinitionOfThisObject = dynamicObjectTypeDefinitionBuilder.build();
-        apiTypeDefinitionRegistry.add(typeDefinitionOfThisObject.getDefinition()); 
+        ObjectTypeDefinition typeDefinitionOfThisObject = objectDefinitionBuilder.build();
+        apiTypeDefinitionRegistry.add(typeDefinitionOfThisObject); 
     }
     
     protected abstract String getGraphQLName();
-    protected abstract List<GraphQLFieldDefinition> getFieldDefinitions();
+    protected abstract List<FieldDefinition> getFieldDefinitions();
     protected abstract String getDescription();
-    protected abstract GraphQLInterfaceType getInterface(TypeDefinitionRegistry apiTypeDefinitionRegistry);
+    protected abstract TypeName getInterface(TypeDefinitionRegistry apiTypeDefinitionRegistry);
 }

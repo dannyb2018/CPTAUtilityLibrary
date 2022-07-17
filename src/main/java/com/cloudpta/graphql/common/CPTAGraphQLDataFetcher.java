@@ -20,7 +20,6 @@ limitations under the License.
 package com.cloudpta.graphql.common;
 
 import com.cloudpta.utilites.exceptions.CPTAException;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -29,6 +28,9 @@ public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAG
     @Override
     public ReturnType get(DataFetchingEnvironment env) throws Exception 
     {
+        // store environment in case it is needed
+        environment = env;
+        
         // get a new input
         InputType input = newInput();
         // parse the arguments
@@ -41,4 +43,6 @@ public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAG
 
     public abstract InputType newInput();
     public abstract ReturnType getData(InputType input) throws CPTAException;
+
+    protected DataFetchingEnvironment environment;
 }

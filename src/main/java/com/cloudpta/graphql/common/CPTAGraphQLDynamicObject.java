@@ -19,9 +19,11 @@ limitations under the License.
 */
 package com.cloudpta.graphql.common;
 
+import java.util.ArrayList;
 import java.util.List;
 import graphql.language.Description;
 import graphql.language.FieldDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.ObjectTypeDefinition.Builder;
@@ -37,14 +39,28 @@ public abstract class CPTAGraphQLDynamicObject
         Builder objectDefinitionBuilder = ObjectTypeDefinition.newObjectTypeDefinition();
         objectDefinitionBuilder.name(objectName);
         // add description
-        String descriptionContent = getDescription();
         Description description = new Description(descriptionContent, null, false);
         objectDefinitionBuilder.description(description);
         // If there is a non-null interface
-        TypeName possibleInterface = getInterface(apiTypeDefinitionRegistry);
-        if(null != possibleInterface)
+        String possibleInterfaceName = getInterfaceName();
+        if(null != possibleInterfaceName)
         {
+            // Get the interface type
+            TypeName.Builder interfaceTypeBuilder = TypeName.newTypeName(possibleInterfaceName);
+            TypeName possibleInterface = interfaceTypeBuilder.build();            
+            // This object will implement this interface
             objectDefinitionBuilder.implementz(possibleInterface);
+            
+            // now need to get interface fields that need to be implemented
+            InterfaceTypeDefinition instrumentInterfaceTypeDefinition = (InterfaceTypeDefinition)apiTypeDefinitionRegistry.getType(possibleInterfaceName).get();
+            // Get the fields implemented by this instrument
+            List<FieldDefinition> fieldsForThisInterface = instrumentInterfaceTypeDefinition.getFieldDefinitions();
+            // If these fields are different from what we already have
+            if(fieldsForThisInterface.size() != interfaceFields.size())
+            {
+                // replace them
+                interfaceFields = fieldsForThisInterface;
+            }
         }
 
         // Add fields
@@ -56,8 +72,23 @@ public abstract class CPTAGraphQLDynamicObject
         apiTypeDefinitionRegistry.add(typeDefinitionOfThisObject); 
     }
     
-    protected abstract String getGraphQLName();
-    protected abstract List<FieldDefinition> getFieldDefinitions();
-    protected abstract String getDescription();
-    protected abstract TypeName getInterface(TypeDefinitionRegistry apiTypeDefinitionRegistry);
+    protected List<FieldDefinition> getFieldDefinitions()
+    {
+        List<FieldDefinition> fields = new ArrayList<>();
+
+        // Add interface fields
+        fields.addAll(interfaceFields);
+
+        // Let inherited class add extra fields
+        addNonInterfaceFields(fields);
+ 
+        return fields;
+    }   
+
+    protected abstract String getInterfaceName();
+    protected abstract void addNonInterfaceFields(List<FieldDefinition> fields);
+    public abstract String getGraphQLName();
+
+    protected String descriptionContent;
+    protected List<FieldDefinition> interfaceFields = new ArrayList<>();
 }

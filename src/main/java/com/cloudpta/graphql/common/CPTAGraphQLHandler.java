@@ -21,6 +21,8 @@ package com.cloudpta.graphql.common;
 
 import java.util.Map;
 import java.util.Set;
+
+import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.RuntimeWiring.Builder;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import graphql.GraphQLContext;
@@ -70,6 +72,11 @@ public abstract class CPTAGraphQLHandler
         {
             return getQueryDataFetchers(context);
         }
+    }
+
+    public void addCustomTypeDefinitionsToRegistry(CPTAGraphQLQueryType queryType, GraphQLContext context, TypeDefinitionRegistry mergedTypeDefinitionRegistry) throws CPTAException
+    {
+        // override this to add custom types
     }
 
     protected Map<String, TypeResolver> getResolvers(CPTAGraphQLQueryType queryType, GraphQLContext context) throws CPTAException

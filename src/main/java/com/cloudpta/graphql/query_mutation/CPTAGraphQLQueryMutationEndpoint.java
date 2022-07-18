@@ -72,7 +72,14 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
 {
     protected void addCustomTypeDefinitionsToRegistry(GraphQLContext context, TypeDefinitionRegistry mergedTypeDefinitionRegistry)
     {
-        // Default is that there are no custom type definitions so do nothing
+        // ask handlers to add custom types
+        // go through the handlers
+        List<CPTAGraphQLHandler> handlers = getHandlers(context);
+
+        for(CPTAGraphQLHandler currentHandler:handlers)
+        {
+            currentHandler.addCustomTypeDefinitionsToRegistry(CPTAGraphQLQueryType.MUTATION, context, mergedTypeDefinitionRegistry);
+        }
     }
 
     // default is no mutations or subscriptions

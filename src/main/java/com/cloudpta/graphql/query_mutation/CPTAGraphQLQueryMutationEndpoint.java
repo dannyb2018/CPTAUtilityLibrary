@@ -53,6 +53,7 @@ import graphql.schema.idl.TypeRuntimeWiring;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
@@ -127,7 +128,8 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             JsonObject queryObject = reader.readObject();             
             // Get operation name
             String operationName = null;
-            if(null != queryObject.get(CPTAGraphQLAPIConstants.OPERATION_NAME))
+            // If the operation is not null or set as null
+            if((null != queryObject.get(CPTAGraphQLAPIConstants.OPERATION_NAME)) && (JsonValue.NULL != queryObject.get(CPTAGraphQLAPIConstants.OPERATION_NAME)))
             {
                 operationName = queryObject.getString(CPTAGraphQLAPIConstants.OPERATION_NAME);
             }

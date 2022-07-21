@@ -37,14 +37,35 @@ public class CPTAGraphQLDynamicEnum<A extends CPTAGraphQLDynamicEnum<A>> impleme
         {
             return true;
         }
-        if (o == null || getClass() != o.getClass())
+        // If input is null then return false
+        if(null == o)
         {
             return false;
         }
 
-        CPTAGraphQLDynamicEnum<?> that = (CPTAGraphQLDynamicEnum<?>) o;
+        // if we are both same class
+        if (getClass() == o.getClass())
+        {
+            CPTAGraphQLDynamicEnum<?> that = (CPTAGraphQLDynamicEnum<?>) o;
 
-        return ordinal == that.ordinal;
+            return ordinal == that.ordinal;
+        }
+        // Else if input is String
+        else if( o instanceof String)
+        {
+            return (0 == ((String)o).compareTo(name));
+        }
+        // if input is enum
+        else if(o instanceof Enum)
+        {
+            return (0 == ((Enum)o).name().compareTo(name));
+        }
+        // otherwise wrong type
+        else
+        {
+            return false;
+        }
+
 
     }
 

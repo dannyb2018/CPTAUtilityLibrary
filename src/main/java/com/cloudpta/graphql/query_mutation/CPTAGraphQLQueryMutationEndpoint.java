@@ -152,7 +152,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                                                           .query(graphQLQuery)
                                                           .operationName(operationName)
-                                                          .context(contextForQuery)
+                                                          .localContext(contextForQuery)
                                                           .variables(variables)
                                                           .build();        
             // Get result

@@ -381,6 +381,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 RuntimeWiring runtimeWiring = runtimeWiringBuilder.build();
                 SchemaGenerator schemaGenerator = new SchemaGenerator();
                 GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);
+                context.put("MutatationSchema", graphQLSchema);
 
                 mutationBuild = GraphQL.newGraphQL(graphQLSchema).build();   
             }
@@ -420,6 +421,7 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
                 RuntimeWiring runtimeWiring = runtimeWiringBuilder.build();
                 SchemaGenerator schemaGenerator = new SchemaGenerator();
                 GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);
+                context.put("QuerySchema", graphQLSchema);
 
                 queryBuild = GraphQL.newGraphQL(graphQLSchema).build();   
             }

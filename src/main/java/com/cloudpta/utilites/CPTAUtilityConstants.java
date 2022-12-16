@@ -25,9 +25,10 @@ package com.cloudpta.utilites;
  */
 public interface CPTAUtilityConstants
 {
-    public static final String VERSION = "1.5.10";       
+    public static final String VERSION = "1.5.11";       
     
     public static final String FRONTEND_LOCATION_PROPERTY_NAME = "FRONTEND_LOCATION";
+    public static final String FRONTEND_INDEX_FILE_NAME_PROPERTY_NAME = "INDEX_FILE_NAME";
     public static final String SERVER_PORT_PROPERTY_NAME = "SERVER_PORT";
 
     public static final String EXCEPTION_MESSAGE_FIELD = "message";

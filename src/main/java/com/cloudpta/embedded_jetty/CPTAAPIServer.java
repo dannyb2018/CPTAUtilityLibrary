@@ -29,6 +29,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.ResourceCollection;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -52,6 +53,7 @@ public abstract class CPTAAPIServer
         databaseConnectionName = System.getenv(CPTADatabaseConstants.DB_CONNECTION_NAME);
         databaseConnectionType = System.getenv(CPTADatabaseConstants.DB_CONNECTION_TYPE);
         frontEndLocation = System.getenv(CPTAUtilityConstants.FRONTEND_LOCATION_PROPERTY_NAME);
+        welcomeFile = System.getenv(CPTAUtilityConstants.FRONTEND_INDEX_FILE_NAME_PROPERTY_NAME);
         
         // if there is a port
         String serverPortAsString = System.getenv(CPTAUtilityConstants.SERVER_PORT_PROPERTY_NAME);
@@ -135,8 +137,19 @@ public abstract class CPTAAPIServer
         ServletContextHandler frontend = new ServletContextHandler();
         frontend.setContextPath(frontendConfiguration.getFrontendContextPath());            
         ServletHolder frontendServletHolder = new ServletHolder(DefaultServlet.class);
-        System.out.println(frontEndLocation);
-        frontend.setResourceBase(frontEndLocation);
+
+        // Can have multiple directories, each with a semi colon separating them
+        String[] frontEndPaths = frontEndLocation.split(";");
+        ResourceCollection frontEndLocations = new ResourceCollection(frontEndPaths);
+        frontend.setBaseResource(frontEndLocations);
+        // if there is a welcome file 
+        if(null != welcomeFile)
+        {
+            String[] welcomesFiles = new String[1];
+            welcomesFiles[0] = welcomeFile;
+            frontend.setWelcomeFiles(welcomesFiles);
+        }
+        
         frontend.addServlet(frontendServletHolder, "/*");            
         contexts.addHandler(frontend);
     }
@@ -207,6 +220,7 @@ public abstract class CPTAAPIServer
     protected String databaseConnectionType;
     protected String databaseJdbcUrl;
     protected String jettyHome;
+    protected String welcomeFile = null;
     protected Logger serverLogger = null;
     
     protected int port=8080;    

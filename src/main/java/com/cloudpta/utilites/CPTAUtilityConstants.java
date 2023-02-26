@@ -68,6 +68,8 @@ public interface CPTAUtilityConstants
     public final static String LOG_FILE_MAX_HISTORY_PROPERTY_DEFAULT = "30";
     public final static String LOG_FILE_TOTAL_MAX_SIZE_PROPERTY = "TOTAL_MAX_LOG_SIZE";
     public final static String LOG_FILE_TOTAL_MAX_SIZE_PROPERTY_DEFAULT = "3GB";
+    public final static String LOG_REMOVE_OTHER_LOGGERS_PROPERTY = "LOG_REMOVE_OTHER_LOGGERS";
+    public final static String LOG_REMOVE_OTHER_LOGGERS_PROPERTY_DEFAULT = "Y";
     
     
 }

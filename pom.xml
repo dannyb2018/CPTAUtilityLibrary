@@ -141,4 +141,42 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties> 
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <filters>
+                        <filter>
+                            <artifact>org.glassfish:jakarta.json</artifact>
+                            <includes>
+                                <include>org/glassfish/json/**</include>
+                            </includes>
+                        </filter>
+                    </filters>
+                    <artifactSet>
+                        <includes>
+                            <include>org.glassfish:jakarta.json</include>
+                        </includes>
+                    </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.glassfish.json</pattern>
+                            <shadedPattern>jakarta.org.glassfish.json</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>   
 </project>

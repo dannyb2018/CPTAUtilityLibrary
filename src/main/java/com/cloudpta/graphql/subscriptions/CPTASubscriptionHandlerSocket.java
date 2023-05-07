@@ -38,6 +38,7 @@ import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
 import com.cloudpta.embedded_jetty.CPTAWebSocket;
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
+import com.cloudpta.graphql.common.CPTAGraphQLAuditor;
 import com.cloudpta.graphql.common.CPTAGraphQLHandler;
 import com.cloudpta.graphql.common.CPTAGraphQLQueryType;
 import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
@@ -76,6 +77,12 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
 
     // get handlers
     protected abstract List<CPTAGraphQLHandler> getHandlers();
+    
+    protected void setupAuditor(GraphQLContext context)
+    {
+        // default do nothing
+        // child classes can override to use different auditor
+    }
 
     protected void handleInitialiseSubscriptionRequest(JsonObject queryAsJson) throws IOException
     {
@@ -111,6 +118,11 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
 
         // Set up all the graphql if need to
         GraphQL build = getGraphQL(contextForQuery);
+
+        // run an audit
+        CPTAGraphQLAuditor auditor = CPTAGraphQLAuditor.getAuditor(contextForQuery);
+        auditor.audit(contextForQuery);
+
 
         // Build the input for the query
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -276,6 +288,9 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         // If we have not already set up graphQL
         if(null == operationBuild)
         {
+            // set auditor if needed
+            setupAuditor(context);
+
             // Get merged registry
             TypeDefinitionRegistry mergedTypeRegistry = getTypeDefinitionRegistry(context);
             

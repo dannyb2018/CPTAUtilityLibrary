@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
+import com.cloudpta.graphql.common.CPTAGraphQLAuditor;
 import com.cloudpta.graphql.common.CPTAGraphQLHandler;
 import com.cloudpta.graphql.common.CPTAGraphQLQueryType;
 import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
@@ -92,6 +93,12 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
     {
         return null;
     }
+    
+    protected void setupAuditor(GraphQLContext context)
+    {
+        // default do nothing
+        // child classes can override to use different auditor
+    }
 
     // This should return any existing graph ql build or null if there is not one
     protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
@@ -147,6 +154,10 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             
             // Set up all the graphql if need to
             GraphQL build = getGraphQL(contextForQuery);
+
+            // run an audit
+            CPTAGraphQLAuditor auditor = CPTAGraphQLAuditor.getAuditor(contextForQuery);
+            auditor.audit(contextForQuery);
 
             // Build the input for the query
             ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -247,6 +258,9 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
         // If we have not already set up graphQL
         if(null == operationBuild)
         {
+            // set auditor if needed
+            setupAuditor(context);
+
             // Get merged registry
             TypeDefinitionRegistry mergedTypeRegistry = getTypeDefinitionRegistry(context);
             

@@ -23,7 +23,7 @@ package com.cloudpta.utilites.websocket;
  *
  * @author Danny
  */
-class CPTAWebSocketHeader
+public class CPTAWebSocketHeader
 {
     public CPTAWebSocketHeader(String newName, String newValue)
     {

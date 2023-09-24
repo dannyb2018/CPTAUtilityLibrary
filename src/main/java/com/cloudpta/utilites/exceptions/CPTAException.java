@@ -62,7 +62,7 @@ public class CPTAException extends RuntimeException implements GraphQLError
         return null;
     }
 
-    public CPTAException(Exception originalException)
+    public CPTAException(Throwable originalException)
     {
         super(originalException);
         

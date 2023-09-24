@@ -72,7 +72,7 @@ class CPTATestHandler implements CPTAWebSocketClientEventListener
     }
 
     @Override
-    public void handleError(String reason)
+    public void handleError(CPTAException reason)
     {
         System.out.println("error " + reason);
     }

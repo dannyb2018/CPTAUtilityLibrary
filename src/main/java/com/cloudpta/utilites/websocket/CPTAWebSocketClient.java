@@ -135,7 +135,6 @@ public class CPTAWebSocketClient
     
     protected void fireDisconnected(boolean didCloseCleanly, Throwable reason)
     {
-        CPTAException wrappedException = new CPTAException(reason);
 
         for( CPTAWebSocketClientEventListener currentListener: listeners)
         {
@@ -145,6 +144,7 @@ public class CPTAWebSocketClient
             }
             else
             {
+                CPTAException wrappedException = new CPTAException(reason);
                 currentListener.handleError(wrappedException);
             }
         }        
@@ -207,6 +207,20 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
         boolean isConnected = ( 0 == wss.compareTo(WebSocketState.OPEN) );
         client.fireConnectionStatusChanged(isConnected);
     }
+
+    @Override
+    public void handleCallbackError(WebSocket ws, Throwable thrwbl) throws Exception
+    {
+        // tell the world something went wrong
+        client.fireDisconnected(false, thrwbl);
+        
+        // if we are still open
+        if(true == ws.isOpen())
+        {
+            ws.disconnect();
+        }
+    }
+
     protected CPTAWebSocketClient client;
     
     // Not used
@@ -303,11 +317,6 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
 
     @Override
     public void onUnexpectedError(WebSocket ws, WebSocketException wse) throws Exception
-    {
-    }
-
-    @Override
-    public void handleCallbackError(WebSocket ws, Throwable thrwbl) throws Exception
     {
     }
 

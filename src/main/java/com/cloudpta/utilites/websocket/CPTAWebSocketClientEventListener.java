@@ -19,6 +19,8 @@ limitations under the License.
 */
 package com.cloudpta.utilites.websocket;
 
+import com.cloudpta.utilites.exceptions.CPTAException;
+
 /**
  *
  * @author Danny
@@ -27,6 +29,6 @@ public interface CPTAWebSocketClientEventListener
 {
     public void handleConnect();
     public void handleDisconnect();
-    public void handleError(String reason);
+    public void handleError(CPTAException reason);
     public void handleMessageReceived(String messageText);    
 }

@@ -133,8 +133,10 @@ public class CPTAWebSocketClient
         }
     }
     
-    protected void fireDisconnected(boolean didCloseCleanly, String reason)
+    protected void fireDisconnected(boolean didCloseCleanly, Throwable reason)
     {
+        CPTAException wrappedException = new CPTAException(reason);
+
         for( CPTAWebSocketClientEventListener currentListener: listeners)
         {
             if(true == didCloseCleanly)
@@ -143,7 +145,7 @@ public class CPTAWebSocketClient
             }
             else
             {
-                currentListener.handleError(reason);
+                currentListener.handleError(wrappedException);
             }
         }        
     }
@@ -178,7 +180,7 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
     @Override
     public void onError(WebSocket ws, WebSocketException wse) throws Exception
     {
-        System.out.println(wse.toString());
+        client.fireDisconnected(false, wse);
     }
 
     @Override
@@ -188,15 +190,9 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
     }
 
     @Override
-    public void onConnectError(WebSocket ws, WebSocketException wse) throws Exception
-    {
-        client.fireDisconnected(false, wse.getMessage());
-    }
-
-    @Override
     public void onDisconnected(WebSocket ws, WebSocketFrame wsf, WebSocketFrame wsf1, boolean bln) throws Exception
     {
-        client.fireDisconnected(true, "");
+        client.fireDisconnected(true, null);
     }
 
     @Override
@@ -215,6 +211,10 @@ class CPTAInternalWebSocketEventListener implements WebSocketListener
     
     // Not used
     
+    @Override
+    public void onConnectError(WebSocket ws, WebSocketException wse) throws Exception
+    {
+    }
     @Override
     public void onFrame(WebSocket ws, WebSocketFrame wsf) throws Exception
     {

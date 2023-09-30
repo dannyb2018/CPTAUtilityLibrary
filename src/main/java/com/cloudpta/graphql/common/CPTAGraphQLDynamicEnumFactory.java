@@ -16,10 +16,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import ch.qos.logback.classic.Logger;
+import com.cloudpta.utilites.logging.CPTALogger;
 import graphql.language.Description;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.SchemaTransformer;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
 {
@@ -43,9 +53,10 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         // Check if it is already defined
         if (null != allFactories.get(type))
         {
-            String errorMessage = "you must instantiate only one factory per dynamic enum type. Duplicate factory instantiated for " + type;
-            IllegalStateException duplicatedEnumException = new IllegalStateException(errorMessage);
-            throw duplicatedEnumException;
+            // remove old one
+            allFactories.remove(type);
+            
+            logger.warn("updating enum " + type);
         }
 
         // Initialise array of values
@@ -163,9 +174,70 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         apiTypeDefinitionRegistry.add(enumTypeDefinition); 
     }
 
+    public GraphQLSchema changeSchema(GraphQLSchema oldSchema)
+    {
+        CPTADynamicEnumSchemaTransformer<A> transformerForThisEnum = new CPTADynamicEnumSchemaTransformer<A>(this);
+
+        GraphQLSchema newSchema = SchemaTransformer.transformSchema(oldSchema, transformerForThisEnum);
+
+        return newSchema;
+    }
+
     protected final EnumTypeDefinition enumTypeDefinition;
     protected final String typeName;
     protected final A[] enumValues;
+    protected static Logger logger = CPTALogger.getLogger();
+}
 
-   // protected static final ConcurrentHashMap<String, CPTAGraphQLDynamicEnumFactory<?>> allFactories = new ConcurrentHashMap<>();
+class CPTADynamicEnumSchemaTransformer<A extends CPTAGraphQLDynamicEnum<A>> extends GraphQLTypeVisitorStub
+{
+    CPTADynamicEnumSchemaTransformer(CPTAGraphQLDynamicEnumFactory<A> theModifiedEumFactory)
+    {
+        modifiedEumFactory = theModifiedEumFactory;
+    }
+
+    @Override
+    public TraversalControl visitGraphQLEnumType(GraphQLEnumType enumType, TraverserContext<GraphQLSchemaElement> context) 
+    {
+        // if we the enum
+        String typeName = modifiedEumFactory.enumTypeDefinition.getName();
+        if(0 == typeName.compareTo(enumType.getName()))
+        {
+            // build a new enum type from old one
+            GraphQLEnumType.Builder newEnumTypeBuilder = GraphQLEnumType.newEnum();
+            // get the description
+            Description enumDescription = modifiedEumFactory.enumTypeDefinition.getDescription();
+            if(null != enumDescription)
+            {
+                newEnumTypeBuilder.description(enumDescription.getContent());
+            }
+            // add the name
+            newEnumTypeBuilder.name(typeName);
+            // add values
+            List<EnumValueDefinition> values = modifiedEumFactory.enumTypeDefinition.getEnumValueDefinitions();
+            for(EnumValueDefinition currentValue : values)
+            {
+                // get name
+                String currentValueName = currentValue.getName();
+                GraphQLEnumValueDefinition.Builder newValue = GraphQLEnumValueDefinition.newEnumValueDefinition().name(currentValueName);
+                // add a description if exists
+                Description currentValueDescription = currentValue.getDescription();
+                if(null != currentValueDescription)
+                {
+                    newValue.description(currentValueDescription.getContent());
+                }
+
+                newEnumTypeBuilder.value(newValue.build());
+            }
+
+            GraphQLEnumType newEnumType = newEnumTypeBuilder.build();
+
+            // modify the enum
+            return changeNode(context, newEnumType);
+        }
+
+        return TraversalControl.CONTINUE;
+    }
+
+    CPTAGraphQLDynamicEnumFactory<A> modifiedEumFactory;
 }

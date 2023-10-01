@@ -74,4 +74,7 @@ public interface CPTAGraphQLAPIConstants
     public final static String MODIFIED_QUERY_SCHEMA = "MODIFIED_QUERY_SCHEMA";
     public final static String MODIFIED_MUTATION_SCHEMA = "MODIFIED_MUTATION_SCHEMA";
     public final static String MODIFIED_SUBSCRIPTION_SCHEMA = "MODIFIED_SUBSCRIPTION_SCHEMA";
+    public final static String CURRENT_QUERY_SCHEMA = "CURRENT_QUERY_SCHEMA";
+    public final static String CURRENT_MUTATION_SCHEMA = "CURRENT_MUTATION_SCHEMA";
+    public final static String CURRENT_SUBSCRIPTION_SCHEMA = "CURRENT_SUBSCRIPTION_SCHEMA";
 }

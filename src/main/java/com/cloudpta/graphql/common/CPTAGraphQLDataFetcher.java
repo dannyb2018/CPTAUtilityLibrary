@@ -43,12 +43,12 @@ public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAG
         // set modified schemas
         if(null != modifiedMutationSchema)
         {
-            GraphQLContext contextForFetching = env.getGraphQlContext();
+            GraphQLContext contextForFetching = env.getLocalContext();
             contextForFetching.put(CPTAGraphQLAPIConstants.MODIFIED_MUTATION_SCHEMA, modifiedMutationSchema);
         }
         if(null != modifiedQuerySchema)
         {
-            GraphQLContext contextForFetching = env.getGraphQlContext();
+            GraphQLContext contextForFetching = env.getLocalContext();
             contextForFetching.put(CPTAGraphQLAPIConstants.MODIFIED_QUERY_SCHEMA, modifiedQuerySchema);
         }
 
@@ -61,6 +61,18 @@ public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAG
     protected void modifyMutationSchema(GraphQLSchema newMutationSchema)
     {
         modifiedMutationSchema = newMutationSchema;
+    }
+
+    protected GraphQLSchema getCurrentMutationSchema()
+    {
+        GraphQLContext contextForFetching = environment.getLocalContext();
+        return (GraphQLSchema)contextForFetching.get(CPTAGraphQLAPIConstants.CURRENT_MUTATION_SCHEMA);
+    }
+
+    protected GraphQLSchema getCurrentQuerySchema()
+    {
+        GraphQLContext contextForFetching = environment.getLocalContext();
+        return (GraphQLSchema)contextForFetching.get(CPTAGraphQLAPIConstants.CURRENT_QUERY_SCHEMA);
     }
 
     protected void modifyQuerySchema(GraphQLSchema newQuerySchema)

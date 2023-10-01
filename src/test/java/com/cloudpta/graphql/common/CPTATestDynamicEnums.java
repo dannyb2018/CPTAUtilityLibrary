@@ -120,19 +120,17 @@ public class CPTATestDynamicEnums
             assertTrue(colourNames.contains(currentColourName));
         }
 
-        // modify enum
-        values.add(new Colour(3, "BROWN"));
-        cf = new ColourFactory(values, valueDescriptions);
-        colours = Colour.values(Colour.class);
-        assertEquals(4, Array.getLength(colours));
-        red = Colour.valueOf(Colour.class,"RED");
-        assertEquals("RED", red.name());
-        Colour brown = Colour.valueOf(Colour.class,"BROWN");
-        assertEquals("BROWN", brown.name());
-        colourNames.add("BROWN");
 
         // modify schema
-        newGraphQLSchema = cf.changeSchema(graphQLSchema);
+        List<Colour> newValues = new ArrayList<>();
+        Colour[] colourValuesAsArray = Colour.values(Colour.class);
+        newValues.add(new Colour(Array.getLength(colourValuesAsArray), "BROWN"));
+        // add to list of names
+        colourNames.add("BROWN");
+        // add desciption of brown
+        Map<String, String> newValuesDescription = new HashMap<>();
+        cf.addNewEnumValues(Colour.class, newValues, newValuesDescription);
+        newGraphQLSchema = cf.updateSchema(graphQLSchema);
         // check we have colour
         colourType = (GraphQLEnumType)newGraphQLSchema.getType("Colour");
         // should exist
@@ -145,6 +143,14 @@ public class CPTATestDynamicEnums
             String currentColourName = currentColour.getName();
             assertTrue(colourNames.contains(currentColourName));
         }
+        colours = Colour.values(Colour.class);
+        assertEquals(4, Array.getLength(colours));
+        red = Colour.valueOf(Colour.class,"RED");
+        assertEquals("RED", red.name());
+        Colour brown = Colour.valueOf(Colour.class,"BROWN");
+        assertEquals("BROWN", brown.name());
+        colourNames.add("BROWN");
+
 
         GraphQL build2 = GraphQL.newGraphQL(newGraphQLSchema).build();
 

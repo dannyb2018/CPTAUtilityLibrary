@@ -59,9 +59,8 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
             logger.warn("updating enum " + type);
         }
 
-        // Initialise array of values
-        int numberOfValues = values.size();
-        enumValues = (A[])Array.newInstance(type, values.size());
+        // create the list of enums
+        enumValues = new ArrayList<>();
 
         // create the enum type definition for this enum
         // Get the name of the enum
@@ -69,11 +68,8 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         EnumTypeDefinition.Builder dynamicEnumTypeDefinitionBuilder = EnumTypeDefinition.newEnumTypeDefinition().name(enumName);
         // start by creating list of enum definitions
         List<EnumValueDefinition> dynamicEnumTypeValueDefinitions = new ArrayList<>();
-        for(int i = 0; i < numberOfValues;  i++)
+        for(A currentValue: values)
         {
-            // Get current value
-            A currentValue = values.get(i);
-
             // build the current enum value
             EnumValueDefinition.Builder currentValueBuilder = EnumValueDefinition.newEnumValueDefinition().name(currentValue.name());
             // if there is a description add it
@@ -88,7 +84,7 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
             EnumValueDefinition currentValueDefinition = currentValueBuilder.build();
             dynamicEnumTypeValueDefinitions.add(currentValueDefinition);
 
-            enumValues[i] = currentValue;
+            enumValues.add(currentValue);
         }
 
         // Create the the enum type definition description if there is one
@@ -113,16 +109,13 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         A desiredValue = null;
 
         // Search the list of values looking for one that matches
-        int numberOfValues = Array.getLength(enumValues);
-        for(int i = 0; i < numberOfValues; i++)
+        for(A currentValue: enumValues)
         {
-            // Look at this value
-            A valueToCheck = enumValues[i];
             // If it is the right one
-            if(0 == enumAsString.compareTo(valueToCheck.name()))
+            if(0 == enumAsString.compareTo(currentValue.name()))
             {
                 // set it and no need to look further
-                desiredValue = valueToCheck;
+                desiredValue = currentValue;
 
                 break;
             }
@@ -133,8 +126,20 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
 
     public A[] values()
     {
+        A[] enumValuesAsArray = null;
+        try
+        {
+            Class<A> enumClass = (Class<A>)Class.forName(typeName);
+            enumValuesAsArray = (A[])Array.newInstance(enumClass, 0);
+            enumValuesAsArray = (A[])enumValues.toArray(enumValuesAsArray);
+        }
+        catch(ClassNotFoundException E)
+        {
+
+        }
+
         // hand over list
-        return enumValues;
+        return enumValuesAsArray;
     }
 
     public static <B extends CPTAGraphQLDynamicEnum<B>> CPTAGraphQLDynamicEnum<B> valueOf(Class<B> enumType, String enumAsString)
@@ -174,18 +179,83 @@ public class CPTAGraphQLDynamicEnumFactory <A extends CPTAGraphQLDynamicEnum<A>>
         apiTypeDefinitionRegistry.add(enumTypeDefinition); 
     }
 
-    public GraphQLSchema changeSchema(GraphQLSchema oldSchema)
+    public void addNewEnumValues
+                               (
+                               Class<A> type, 
+                               List<A> newValues, 
+                               Map<String, String> newValueDescriptions
+                               )
+                               throws 
+                               NoSuchMethodException, 
+                               SecurityException, 
+                               InstantiationException, 
+                               IllegalAccessException, 
+                               IllegalArgumentException, 
+                               InvocationTargetException
     {
-        CPTADynamicEnumSchemaTransformer<A> transformerForThisEnum = new CPTADynamicEnumSchemaTransformer<A>(this);
+        // build up list of values
+        List<A> newEnumValues = new ArrayList<A>();     
+        newEnumValues.addAll(enumValues);   
+    
+        // create the enum type definition for this enum
+        // Get the name of the enum
+        EnumTypeDefinition.Builder dynamicEnumTypeDefinitionBuilder = EnumTypeDefinition.newEnumTypeDefinition().name(enumTypeDefinition.getName());
+        // get old values
+        List<EnumValueDefinition> oldValueDefinitions = enumTypeDefinition.getEnumValueDefinitions();
+        // building list of new values, starting with old ones
+        List<EnumValueDefinition> dynamicEnumTypeValueDefinitions = new ArrayList<>(oldValueDefinitions);
+        // now add new ones
+        for(A currentNewValue: newValues)
+        {
+            // set the ordinal correctly and add
+            newEnumValues.add(currentNewValue);
 
-        GraphQLSchema newSchema = SchemaTransformer.transformSchema(oldSchema, transformerForThisEnum);
+            // build the current enum value
+            EnumValueDefinition.Builder currentValueBuilder = EnumValueDefinition.newEnumValueDefinition().name(currentNewValue.name());
+            // if there is a description add it
+            String currentValueDescriptionAsString = newValueDescriptions.get(currentNewValue.name());
+            if(null != currentValueDescriptionAsString)
+            {
+                Description currentValueDescription = new Description(currentValueDescriptionAsString, null, false);
+                currentValueBuilder = currentValueBuilder.description(currentValueDescription);
+            }
 
-        return newSchema;
+            // Add to list
+            EnumValueDefinition currentValueDefinition = currentValueBuilder.build();
+            dynamicEnumTypeValueDefinitions.add(currentValueDefinition);
+        }
+
+        // Create description same as old one if there is one
+        Description dynamicEnumTypeDescription = enumTypeDefinition.getDescription();
+        if(null != dynamicEnumTypeDescription)
+        {
+            dynamicEnumTypeDefinitionBuilder = dynamicEnumTypeDefinitionBuilder.description(dynamicEnumTypeDescription);
+        }
+    
+
+        // Add values
+        dynamicEnumTypeDefinitionBuilder.enumValueDefinitions(dynamicEnumTypeValueDefinitions);
+        
+        // Build the definition
+        enumTypeDefinition = dynamicEnumTypeDefinitionBuilder.build();
+
+        // save new values
+        enumValues = newEnumValues;
     }
 
-    protected final EnumTypeDefinition enumTypeDefinition;
+    public GraphQLSchema updateSchema(GraphQLSchema schemaToUpdate)
+    {
+        // transform the schema
+        CPTADynamicEnumSchemaTransformer<A> transformerForThisEnum = new CPTADynamicEnumSchemaTransformer<A>(this);
+
+        GraphQLSchema newSchema = SchemaTransformer.transformSchema(schemaToUpdate, transformerForThisEnum);
+        return newSchema;
+
+    }
+
+    protected EnumTypeDefinition enumTypeDefinition;
     protected final String typeName;
-    protected final A[] enumValues;
+    protected List<A> enumValues;
     protected static Logger logger = CPTALogger.getLogger();
 }
 
@@ -220,6 +290,7 @@ class CPTADynamicEnumSchemaTransformer<A extends CPTAGraphQLDynamicEnum<A>> exte
                 // get name
                 String currentValueName = currentValue.getName();
                 GraphQLEnumValueDefinition.Builder newValue = GraphQLEnumValueDefinition.newEnumValueDefinition().name(currentValueName);
+                newValue.value(currentValueName);
                 // add a description if exists
                 Description currentValueDescription = currentValue.getDescription();
                 if(null != currentValueDescription)

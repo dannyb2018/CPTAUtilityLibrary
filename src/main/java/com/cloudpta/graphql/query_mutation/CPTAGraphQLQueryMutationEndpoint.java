@@ -154,6 +154,18 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             
             // Set up all the graphql if need to
             GraphQL build = getGraphQL(contextForQuery);
+            // add schemas in case they need to get modified
+            // need type registry
+            TypeDefinitionRegistry mergedTypeRegistry = getTypeDefinitionRegistry(contextForQuery);
+            // get mutation schema if needed
+            GraphQL mutationBuild = getMutationBuild(mergedTypeRegistry, contextForQuery);
+            GraphQLSchema mutationSchema = mutationBuild.getGraphQLSchema();
+            contextForQuery.put(CPTAGraphQLAPIConstants.CURRENT_MUTATION_SCHEMA, mutationSchema);
+            // get query schema if needed
+            GraphQL queryBuild = getQueryBuild(mergedTypeRegistry, contextForQuery);
+            GraphQLSchema querySchema = queryBuild.getGraphQLSchema();
+            contextForQuery.put(CPTAGraphQLAPIConstants.CURRENT_QUERY_SCHEMA, querySchema);
+
 
             // run an audit
             CPTAGraphQLAuditor auditor = CPTAGraphQLAuditor.getAuditor(contextForQuery);
@@ -182,18 +194,20 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             
             // if there is a changed schema for query
             GraphQLSchema modifiedSchema = contextForQuery.get(CPTAGraphQLAPIConstants.MODIFIED_MUTATION_SCHEMA);
-            if(null == modifiedSchema)
+            if(null != modifiedSchema)
             {
-                // set the new mutation query schema
+                // set build for mutation
                 GraphQL newMutationBuild = GraphQL.newGraphQL(modifiedSchema).build();
+                
                 setExistingMutationBuild(contextForQuery, newMutationBuild);
             }
 
             modifiedSchema = contextForQuery.get(CPTAGraphQLAPIConstants.MODIFIED_QUERY_SCHEMA);
-            if(null == modifiedSchema)
+            if(null != modifiedSchema)
             {
                 // do the same for query
                 GraphQL newQueryBuild = GraphQL.newGraphQL(modifiedSchema).build();
+                
                 setExistingQueryBuild(contextForQuery, newQueryBuild);
             }
             

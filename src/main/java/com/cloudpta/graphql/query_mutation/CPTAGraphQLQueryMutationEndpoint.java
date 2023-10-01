@@ -180,6 +180,23 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             // Log query
             servletLogger.info("sent response : " + resultAsString + " to request: " + queryAsString);
             
+            // if there is a changed schema for query
+            GraphQLSchema modifiedSchema = contextForQuery.get(CPTAGraphQLAPIConstants.MODIFIED_MUTATION_SCHEMA);
+            if(null == modifiedSchema)
+            {
+                // set the new mutation query schema
+                GraphQL newMutationBuild = GraphQL.newGraphQL(modifiedSchema).build();
+                setExistingMutationBuild(contextForQuery, newMutationBuild);
+            }
+
+            modifiedSchema = contextForQuery.get(CPTAGraphQLAPIConstants.MODIFIED_QUERY_SCHEMA);
+            if(null == modifiedSchema)
+            {
+                // do the same for query
+                GraphQL newQueryBuild = GraphQL.newGraphQL(modifiedSchema).build();
+                setExistingQueryBuild(contextForQuery, newQueryBuild);
+            }
+            
             // Send it back
             response = Response.ok().entity(resultAsString).build();
         }

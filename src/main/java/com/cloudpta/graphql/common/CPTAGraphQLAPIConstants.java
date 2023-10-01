@@ -69,4 +69,9 @@ public interface CPTAGraphQLAPIConstants
     public final static String KAFKA_SCHEMA_TO_USE = "QP_KAFKA_SCHEMA_TO_USE";
     public final static String KAFKA_OFFSET_RESET_SKIP_MISSED_MESSAGES = "latest";
     public final static String KAFKA_OFFSET_RESET_NOT_SKIP_MISSED_MESSAGES = "earliest";
+
+    // for query modifications
+    public final static String MODIFIED_QUERY_SCHEMA = "MODIFIED_QUERY_SCHEMA";
+    public final static String MODIFIED_MUTATION_SCHEMA = "MODIFIED_MUTATION_SCHEMA";
+    public final static String MODIFIED_SUBSCRIPTION_SCHEMA = "MODIFIED_SUBSCRIPTION_SCHEMA";
 }

@@ -20,8 +20,10 @@ limitations under the License.
 package com.cloudpta.graphql.common;
 
 import com.cloudpta.utilites.exceptions.CPTAException;
+import graphql.GraphQLContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLSchema;
 
 public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAGraphQLInput> implements DataFetcher<ReturnType> 
 {
@@ -38,11 +40,35 @@ public abstract class CPTAGraphQLDataFetcher<ReturnType, InputType extends CPTAG
         // get data
         ReturnType data = getData(input);
 
+        // set modified schemas
+        if(null != modifiedMutationSchema)
+        {
+            GraphQLContext contextForFetching = env.getGraphQlContext();
+            contextForFetching.put(CPTAGraphQLAPIConstants.MODIFIED_MUTATION_SCHEMA, modifiedMutationSchema);
+        }
+        if(null != modifiedQuerySchema)
+        {
+            GraphQLContext contextForFetching = env.getGraphQlContext();
+            contextForFetching.put(CPTAGraphQLAPIConstants.MODIFIED_QUERY_SCHEMA, modifiedQuerySchema);
+        }
+
         return data;
     }
 
     public abstract InputType newInput();
     public abstract ReturnType getData(InputType input) throws CPTAException;
 
+    protected void modifyMutationSchema(GraphQLSchema newMutationSchema)
+    {
+        modifiedMutationSchema = newMutationSchema;
+    }
+
+    protected void modifyQuerySchema(GraphQLSchema newQuerySchema)
+    {
+        modifiedQuerySchema = newQuerySchema;
+    }
+
+    protected GraphQLSchema modifiedMutationSchema = null;
+    protected GraphQLSchema modifiedQuerySchema = null;
     protected DataFetchingEnvironment environment;
 }

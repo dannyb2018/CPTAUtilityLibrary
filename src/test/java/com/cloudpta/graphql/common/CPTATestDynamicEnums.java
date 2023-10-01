@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import com.cloudpta.utilites.logging.CPTALogger;
+import graphql.GraphQL;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLSchema;
@@ -102,6 +103,9 @@ public class CPTATestDynamicEnums
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+        // test setting the schemas after schema changes
+        GraphQLSchema newGraphQLSchema = graphQLSchema;
+        GraphQL build1 = GraphQL.newGraphQL(newGraphQLSchema).build();
         
         // check we have colour
         GraphQLEnumType colourType = (GraphQLEnumType)graphQLSchema.getType("Colour");
@@ -128,7 +132,7 @@ public class CPTATestDynamicEnums
         colourNames.add("BROWN");
 
         // modify schema
-        GraphQLSchema newGraphQLSchema = cf.changeSchema(graphQLSchema);
+        newGraphQLSchema = cf.changeSchema(graphQLSchema);
         // check we have colour
         colourType = (GraphQLEnumType)newGraphQLSchema.getType("Colour");
         // should exist
@@ -142,6 +146,21 @@ public class CPTATestDynamicEnums
             assertTrue(colourNames.contains(currentColourName));
         }
 
+        GraphQL build2 = GraphQL.newGraphQL(newGraphQLSchema).build();
+
+        // see that build 1 has a different schema
+        colourType = (GraphQLEnumType)build1.getGraphQLSchema().getType("Colour");
+        assertNotNull(colourType);
+        colourValues = colourType.getValues();
+        // should have 3
+        assertEquals(3, colourValues.size());
+
+        // build 2 has a different schema from build 1
+        colourType = (GraphQLEnumType)build2.getGraphQLSchema().getType("Colour");
+        assertNotNull(colourType);
+        colourValues = colourType.getValues();
+        // should have 4
+        assertEquals(4, colourValues.size());
     }
 }
 

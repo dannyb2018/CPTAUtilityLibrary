@@ -99,6 +99,11 @@ public class CPTAException extends RuntimeException implements GraphQLError
     {
         return exceptionMessage;
     }
+
+    public void setMessage(String newMessage)
+    {
+        exceptionMessage = newMessage;
+    }
     
     public JsonObject getErrors()
     {

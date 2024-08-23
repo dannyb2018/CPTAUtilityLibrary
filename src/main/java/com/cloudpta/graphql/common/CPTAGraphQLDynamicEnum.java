@@ -58,7 +58,7 @@ public class CPTAGraphQLDynamicEnum<A extends CPTAGraphQLDynamicEnum<A>> impleme
         // if input is enum
         else if(o instanceof Enum)
         {
-            return (0 == ((Enum)o).name().compareTo(name));
+            return (0 == ((Enum<?>)o).name().compareTo(name));
         }
         // otherwise wrong type
         else

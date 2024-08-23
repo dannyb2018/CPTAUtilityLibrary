@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
-import com.cloudpta.graphql.subscriptions.CPTASubscriptionHandlerSocket;
 import java.lang.reflect.Constructor;
 import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.core.Application;

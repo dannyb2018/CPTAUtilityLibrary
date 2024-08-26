@@ -411,13 +411,15 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             {
                 // Build the executable schema for mutations
                 // Add data fetchers
-                Map<String, DataFetcher> fetcherForThisBuild = getDataFetchersForMutation(context);
+                Map<String, DataFetcher<?>> fetcherForThisBuild = getDataFetchersForMutation(context);
+                @SuppressWarnings("rawtypes")
+                Map<String, DataFetcher> dataFetchers = new HashMap<>(fetcherForThisBuild);
                 graphql.schema.idl.RuntimeWiring.Builder runtimeWiringBuilder= 
                 RuntimeWiring.newRuntimeWiring()
                 .type
                 (
                     TypeRuntimeWiring.newTypeWiring(CPTAGraphQLAPIConstants.WIRING_MUTATION_TYPE)
-                    .dataFetchers(fetcherForThisBuild)
+                    .dataFetchers(dataFetchers)
                 );
                 // Add type resolvers
                 addTypeResolversForMutation(runtimeWiringBuilder, context);
@@ -450,13 +452,15 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
             {
                 // Build the executable schema for queries
                 // Add data fetchers
-                Map<String, DataFetcher> fetcherForThisBuild = getDataFetchersForQuery(context);
+                Map<String, DataFetcher<?>> fetcherForThisBuild = getDataFetchersForQuery(context);
+                @SuppressWarnings("rawtypes")
+                Map<String, DataFetcher> dataFetchers = new HashMap<>(fetcherForThisBuild);
                 graphql.schema.idl.RuntimeWiring.Builder runtimeWiringBuilder= 
                 RuntimeWiring.newRuntimeWiring()
                 .type
                 (
                     TypeRuntimeWiring.newTypeWiring(CPTAGraphQLAPIConstants.WIRING_QUERY_TYPE)
-                    .dataFetchers(fetcherForThisBuild)
+                    .dataFetchers(dataFetchers)
                 );
                 // Add type resolvers
                 addTypeResolversForQuery(runtimeWiringBuilder, context);
@@ -492,16 +496,16 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
         }
     }
 
-    protected Map<String, DataFetcher> getDataFetchersForMutation(GraphQLContext context) throws CPTAException
+    protected Map<String, DataFetcher<?>> getDataFetchersForMutation(GraphQLContext context) throws CPTAException
     {
-        Map<String, DataFetcher> allDataFetchersForMutation = new ConcurrentHashMap<>();
+        Map<String, DataFetcher<?>> allDataFetchersForMutation = new ConcurrentHashMap<>();
 
         // go through the handlers
         List<CPTAGraphQLHandler> handlers = getHandlers(context);
 
         for(CPTAGraphQLHandler currentHandler:handlers)
         {
-            Map<String, DataFetcher> dataFetchersForThisHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.MUTATION, context);
+            Map<String, DataFetcher<?>> dataFetchersForThisHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.MUTATION, context);
             allDataFetchersForMutation.putAll(dataFetchersForThisHandler);
         }
 
@@ -519,16 +523,16 @@ public abstract class CPTAGraphQLQueryMutationEndpoint extends HttpServlet
         }
     }
 
-    protected Map<String, DataFetcher> getDataFetchersForQuery(GraphQLContext context) throws CPTAException
+    protected Map<String, DataFetcher<?>> getDataFetchersForQuery(GraphQLContext context) throws CPTAException
     {
-        Map<String, DataFetcher> allDataFetchersForQuery = new ConcurrentHashMap<>();
+        Map<String, DataFetcher<?>> allDataFetchersForQuery = new ConcurrentHashMap<>();
 
         // go through the handlers
         List<CPTAGraphQLHandler> handlers = getHandlers(context);
 
         for(CPTAGraphQLHandler currentHandler:handlers)
         {
-            Map<String, DataFetcher> dataFetchersForThisHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.QUERY, context);
+            Map<String, DataFetcher<?>> dataFetchersForThisHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.QUERY, context);
             allDataFetchersForQuery.putAll(dataFetchersForThisHandler);
         }
 

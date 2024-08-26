@@ -28,13 +28,21 @@ public abstract class CPTAGraphQLInput
 {
     public void parseInput(DataFetchingEnvironment input) throws CPTAException
     {
-        // Get the context for input
-        getContext(input);
+        try
+        {
+            // Get the context for input
+            getContext(input);
 
-        // get the arguments themselves
-        Map<String, Object> argumentsAsMap = input.getArguments();
-        argumentsAsMap = (Map<String, Object>)argumentsAsMap.get("Input");
-        parseArguments(argumentsAsMap);
+            // get the arguments themselves
+            Map<String, Object> argumentsAsMap = input.getArguments();
+            argumentsAsMap = (Map<String, Object>)argumentsAsMap.get("Input");
+            parseArguments(argumentsAsMap);
+        }
+        catch(Exception E)
+        {
+            CPTAException wrappedException = new CPTAException(E);
+            throw wrappedException;
+        }
     }    
 
     public GraphQLContext getInputContext()
@@ -44,7 +52,7 @@ public abstract class CPTAGraphQLInput
 
     protected void getContext(DataFetchingEnvironment input)
     {
-        inputContext = input.getContext();
+        inputContext = input.getLocalContext();
     }
 
     protected abstract void parseArguments(Map<String, Object> argumentsAsMap) throws CPTAException;

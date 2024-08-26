@@ -34,9 +34,9 @@ public abstract class CPTAGraphQLHandler
     protected abstract Map<String, TypeResolver> getSubscriptionTypeResolvers(GraphQLContext context) throws CPTAException;
     protected abstract Map<String, TypeResolver> getMutationTypeResolvers(GraphQLContext context) throws CPTAException;
     protected abstract Map<String, TypeResolver> getQueryTypeResolvers(GraphQLContext context) throws CPTAException;
-    protected abstract Map<String, DataFetcher> getSubscriptionDataFetchers(GraphQLContext context) throws CPTAException;
-    protected abstract Map<String, DataFetcher> getMutationDataFetchers(GraphQLContext context) throws CPTAException;
-    protected abstract Map<String, DataFetcher> getQueryDataFetchers(GraphQLContext context) throws CPTAException;
+    protected abstract Map<String, DataFetcher<?>> getSubscriptionDataFetchers(GraphQLContext context) throws CPTAException;
+    protected abstract Map<String, DataFetcher<?>> getMutationDataFetchers(GraphQLContext context) throws CPTAException;
+    protected abstract Map<String, DataFetcher<?>> getQueryDataFetchers(GraphQLContext context) throws CPTAException;
 
     public void addTypeResolversForQueryType(CPTAGraphQLQueryType queryType, Builder wiringBuilder, GraphQLContext context) throws CPTAException
     {
@@ -57,7 +57,7 @@ public abstract class CPTAGraphQLHandler
 
     }
 
-    public Map<String, DataFetcher> getDataFetchersForQueryType(CPTAGraphQLQueryType queryType, GraphQLContext context) throws CPTAException
+    public Map<String, DataFetcher<?>> getDataFetchersForQueryType(CPTAGraphQLQueryType queryType, GraphQLContext context) throws CPTAException
     {
         // If it is subscription
         if(CPTAGraphQLQueryType.SUBSCRIPTION == queryType)

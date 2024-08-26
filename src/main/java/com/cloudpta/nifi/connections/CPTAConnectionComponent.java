@@ -35,21 +35,22 @@ import java.util.List;
  */
 public class CPTAConnectionComponent extends CPTANifiNamedComponent
 {
-    public CPTANifiEndpoint getSource()
+    public CPTANifiEndpoint<?> getSource()
     {
         return source;
     }
 
-    public void setSource(CPTANifiEndpoint newSource)
+    public void setSource(CPTANifiEndpoint<?> newSource)
     {
         source = newSource;
     }
-    public CPTANifiEndpoint getDestination()
+
+    public CPTANifiEndpoint<?> getDestination()
     {
         return destination;
     }
 
-    public void setDestination(CPTANifiEndpoint newDestination)
+    public void setDestination(CPTANifiEndpoint<?> newDestination)
     {
         destination = newDestination;
     }
@@ -103,8 +104,8 @@ public class CPTAConnectionComponent extends CPTANifiNamedComponent
         return destinationAsJson;
     }
 
-    protected CPTANifiEndpoint source;
-    protected CPTANifiEndpoint destination;
+    protected CPTANifiEndpoint<?> source;
+    protected CPTANifiEndpoint<?> destination;
     protected List<String> selectedRelationships = new ArrayList<>();
     static Logger componentLogger = CPTALogger.getLogger();
 }

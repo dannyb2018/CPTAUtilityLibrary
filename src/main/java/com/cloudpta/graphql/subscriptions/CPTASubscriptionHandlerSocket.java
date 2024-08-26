@@ -128,7 +128,7 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                                                     .query(graphQLQuery)
                                                     .operationName(operationName)
-                                                    .context(contextForQuery)
+                                                    .localContext(contextForQuery)
                                                     .variables(variables)
                                                     .build();        
         // Get result
@@ -355,13 +355,15 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
             {
                 // Build the executable schema for subscriptions
                 // Add data fetchers
-                Map<String, DataFetcher> fetcherForThisBuild = getDataFetchersForSubscription(context);
+                Map<String, DataFetcher<?>> fetcherForThisBuild = getDataFetchersForSubscription(context);
+                @SuppressWarnings("rawtypes")
+                Map<String, DataFetcher> dataFetchers = new HashMap<>(fetcherForThisBuild);
                 graphql.schema.idl.RuntimeWiring.Builder runtimeWiringBuilder= 
                 RuntimeWiring.newRuntimeWiring()
                 .type
                 (
                     TypeRuntimeWiring.newTypeWiring(CPTAGraphQLAPIConstants.WIRING_SUBSCRIPTION_TYPE)
-                    .dataFetchers(fetcherForThisBuild)
+                    .dataFetchers(dataFetchers)
                 );
                 // Add type resolvers
                 addTypeResolversForSubscription(runtimeWiringBuilder, context);
@@ -395,9 +397,9 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         }
     }
 
-    protected Map<String, DataFetcher> getDataFetchersForSubscription(GraphQLContext context) throws CPTAException
+    protected Map<String, DataFetcher<?>> getDataFetchersForSubscription(GraphQLContext context) throws CPTAException
     {
-        Map<String, DataFetcher> allDataFetchers = new ConcurrentHashMap<>();
+        Map<String, DataFetcher<?>> allDataFetchers = new ConcurrentHashMap<>();
 
         // Get all the handlers
         List<CPTAGraphQLHandler> handlers = getHandlers();
@@ -405,7 +407,7 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         // for each handler add data handlers
         for(CPTAGraphQLHandler currentHandler: handlers)
         {
-            Map<String, DataFetcher> dataFetchersForHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.SUBSCRIPTION, context);
+            Map<String, DataFetcher<?>> dataFetchersForHandler = currentHandler.getDataFetchersForQueryType(CPTAGraphQLQueryType.SUBSCRIPTION, context);
             allDataFetchers.putAll(dataFetchersForHandler);
         }
 

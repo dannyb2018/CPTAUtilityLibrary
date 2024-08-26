@@ -34,13 +34,14 @@ public class CPTAIniFileParser
         // This is the properties from the ini file
         Properties propertiesFromIniFile = new Properties();
         
+        BufferedReader iniFileReader = null;
         try
         {
             // get the ini file location
             File iniFile = new File(nameOfFile);
             FileReader fr = new FileReader(iniFile);   
             //reads the file  
-            BufferedReader iniFileReader =new BufferedReader(fr); 
+            iniFileReader =new BufferedReader(fr); 
 
             // Read line after line
             String nextLine = iniFileReader.readLine();
@@ -63,6 +64,18 @@ public class CPTAIniFileParser
         {
             CPTAException wrappedException = new CPTAException(E);
             throw wrappedException;
+        }
+        finally
+        {
+            try
+            {
+                // try to close but doesnt matter if there is an exception
+                iniFileReader.close();
+            }
+            catch(Exception E)
+            {
+                // do nothing
+            }
         }
         
         return propertiesFromIniFile;

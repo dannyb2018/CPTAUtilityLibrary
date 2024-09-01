@@ -126,12 +126,15 @@ public class CPTAException extends RuntimeException implements GraphQLError
             stackTrace = stackTrace + "\tat " + elements[i].toString() + "\r\n";
             String fileErrorHappenedIn = elements[i].getFileName();
             
-            // If the file starts with QP or CPTA
-            if((true == fileErrorHappenedIn.startsWith("QP"))||(true == fileErrorHappenedIn.startsWith("CPTA")))
+            if(null != fileErrorHappenedIn)
             {
-                // Store details here
-                firstRelevantLineError = elements[i].toString();
-                break;
+                // If the file starts with QP or CPTA
+                if((true == fileErrorHappenedIn.startsWith("QP"))||(true == fileErrorHappenedIn.startsWith("CPTA")))
+                {
+                    // Store details here
+                    firstRelevantLineError = elements[i].toString();
+                    break;
+                }
             }
         }
         for(; i < numberOfStackTraceElements; i++ )

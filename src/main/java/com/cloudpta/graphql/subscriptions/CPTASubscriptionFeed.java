@@ -65,44 +65,28 @@ public class CPTASubscriptionFeed implements Subscriber<ExecutionResult>
     {
         try 
         {
-            // if there is an execution result to send
-            if(null != executionResult)
-            {
-                Map<String, Object> spec = executionResult.toSpecification();
+            Map<String, Object> spec = executionResult.toSpecification();
 
-                // Convert that result into a json string
-                JsonbConfig jsonbConfig = new JsonbConfig()
-                                            .withPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CASE_WITH_UNDERSCORES)
-                                            .withNullValues(true)
-                                            .withFormatting(false);
-                Jsonb converter = JsonbBuilder.create(jsonbConfig);
-                String resultAsString = converter.toJson(spec);
-                JsonReader reader = Json.createReader(new StringReader(resultAsString));
-                JsonObject resultObject = reader.readObject(); 
+            // Convert that result into a json string
+            JsonbConfig jsonbConfig = new JsonbConfig()
+                                        .withPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CASE_WITH_UNDERSCORES)
+                                        .withNullValues(true)
+                                        .withFormatting(false);
+            Jsonb converter = JsonbBuilder.create(jsonbConfig);
+            String resultAsString = converter.toJson(spec);
+            JsonReader reader = Json.createReader(new StringReader(resultAsString));
+            JsonObject resultObject = reader.readObject(); 
 
-                JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
-                responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
-                responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
-                responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, resultObject);
-                JsonObject responseObject = responseObjectBuilder.build();
-                String responseAsString = responseObject.toString();
-                socketSession.getRemote().sendString(responseAsString);
+            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, resultObject);
+            JsonObject responseObject = responseObjectBuilder.build();
+            String responseAsString = responseObject.toString();
+            socketSession.getRemote().sendString(responseAsString);
 
-                // get next ones
-                subscriptionRef.get().request(Long.MAX_VALUE);
-            }
-            else
-            {
-                // had a time out with no data so send a keep alive
-                JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
-                responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_KEEP_ALIVE);
-                JsonObject responseObject = responseObjectBuilder.build();
-                String responseAsString = responseObject.toString();
-                socketSession.getRemote().sendString(responseAsString);
-
-                // get next ones
-                subscriptionRef.get().request(Long.MAX_VALUE);
-            }
+            // get next ones
+            subscriptionRef.get().request(Long.MAX_VALUE);
         } 
         catch (Exception e) 
         {
@@ -121,6 +105,22 @@ public class CPTASubscriptionFeed implements Subscriber<ExecutionResult>
         if( true == socketSession.isOpen())
         {
             // write back an error somehow
+            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_ERROR);
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, wrappedException.getErrors().toString());
+            JsonObject responseObject = responseObjectBuilder.build();
+            String responseAsString = responseObject.toString();
+            try
+            {
+                socketSession.getRemote().sendString(responseAsString); 
+            } 
+            catch(Exception E2)
+            {
+                // shutting down anyway so just log this
+                CPTAException wrappedException2  = new CPTAException(E2);
+            }  
+    
         }
 
         // Get the text of exception and log it
@@ -149,7 +149,26 @@ public class CPTASubscriptionFeed implements Subscriber<ExecutionResult>
             CPTAException wrappedException  = new CPTAException(E);
         }  
     }
-       
+
+    public void keepAlive()
+    {
+        try
+        {
+            // had a time out with no data so send a keep alive
+            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_KEEP_ALIVE);
+            JsonObject responseObject = responseObjectBuilder.build();
+            String responseAsString = responseObject.toString();
+            socketSession.getRemote().sendString(responseAsString);
+
+            // get next ones
+            subscriptionRef.get().request(Long.MAX_VALUE);
+        }
+        catch(Throwable E)
+        {
+            onError(E);
+        }
+    }
     public void stop()
     {
         // Cancel the subscription

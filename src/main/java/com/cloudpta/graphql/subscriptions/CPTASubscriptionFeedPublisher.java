@@ -146,8 +146,12 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
             {
                 // convert to a result
                 ResultType currentResult = convertFromJson(currentResultAsJson);
-                // Add to list
-                updates.add(currentResult);
+                // if there was a result
+                if(null != currentResult)
+                {
+                    // Add to list
+                    updates.add(currentResult);
+                }
             }
         }
         catch(Exception E)

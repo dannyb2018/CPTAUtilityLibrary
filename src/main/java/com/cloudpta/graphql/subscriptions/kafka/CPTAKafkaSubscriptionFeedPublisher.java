@@ -21,6 +21,7 @@ package com.cloudpta.graphql.subscriptions.kafka;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,11 @@ import jakarta.json.JsonReader;
 
 public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType extends CPTAGraphQLInput> extends CPTASubscriptionFeedPublisher<ResultType,RequestType> 
 {
+    public CPTAKafkaSubscriptionFeedPublisher(RequestType input)
+    {
+        super(input);
+    }
+
     @Override
     protected void setupSource()
     {
@@ -50,11 +56,9 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
         // Get the group id
         String groupID = context.get(CPTAGraphQLAPIConstants.KAFKA_GROUP_ID);
         // Where to start from
-        String offsetReset = context.get(CPTAGraphQLAPIConstants.KAFKA_OFFSET_RESET);
-        // Get the name of the topic to read from
-        String topicToBrowse = context.get(CPTAGraphQLAPIConstants.KAFKA_TOPIC_TO_BROWSE);
+        String offsetReset = context.get(CPTAGraphQLAPIConstants.KAFKA_OFFSET_RESET);        
         // Get the text of the schema to use
-        String schemaToUse = context.get(CPTAGraphQLAPIConstants.KAFKA_SCHEMA_TO_USE);
+        String schemaToUse = context.get(CPTAGraphQLAPIConstants.KAFKA_SCHEMA_TO_USE);        
 
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", url);
@@ -69,7 +73,17 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
         props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
-        topics.add(topicToBrowse);
+        // Get the names of topics to read from, comma delimited
+        String topicsToBrowseAsCommaDelimitedString = context.get(CPTAGraphQLAPIConstants.KAFKA_TOPIC_TO_BROWSE);
+        String[] topicsAsArray = topicsToBrowseAsCommaDelimitedString.split(",");
+        int numberOfTopics = Array.getLength(topicsAsArray);
+        for(int i = 0; i < numberOfTopics; i++)
+        {
+            // add the topic
+            topics.add(topicsAsArray[i]);
+        }
+
+        // create consumer
         consumer = new KafkaConsumer<>(props); 
         
         // Set up schema parser
@@ -100,9 +114,9 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
         for(ConsumerRecord<byte[], byte[]> currentRecord : recordsReadFromKafka)
         {
             // Convert to Json
-            JsonObject quoteAsJson = convertFromKafkaRecord(currentRecord);
+            JsonObject recordAsJson = convertFromKafkaRecord(currentRecord);
             // Add to list
-            jsonReadFromKafka.add(quoteAsJson);
+            jsonReadFromKafka.add(recordAsJson);
         }
 
         return jsonReadFromKafka;
@@ -120,9 +134,9 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
 
         // Turn into JsonObject
         JsonReader reader = Json.createReader(new StringReader(decodedAvroAsJsonString));
-        JsonObject quoteAsJson = reader.readObject();
+        JsonObject recordAsJson = reader.readObject();
 
-        return quoteAsJson;
+        return recordAsJson;
     }
 
     protected Schema schema;

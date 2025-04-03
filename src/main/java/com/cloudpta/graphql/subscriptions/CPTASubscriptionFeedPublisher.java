@@ -170,7 +170,7 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
         return updates;
     }
 
-    protected abstract ResultType convertFromJson(JsonObject quoteAsJson);
+    protected abstract ResultType convertFromJson(JsonObject recordAsJson);
     protected abstract void setupSource();
     protected abstract void subscribeToSource();
     protected abstract void unsubscribeFromSource();

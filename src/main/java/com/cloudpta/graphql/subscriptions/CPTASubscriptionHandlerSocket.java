@@ -76,12 +76,24 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
     protected abstract InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException;
 
     // get handlers
-    protected abstract List<CPTAGraphQLHandler> getHandlers();
+    protected abstract List<CPTAGraphQLHandler> getHandlers(GraphQLContext context);
     
     protected void setupAuditor(GraphQLContext context)
     {
         // default do nothing
         // child classes can override to use different auditor
+    }
+
+    protected void addCustomTypeDefinitionsToRegistry(GraphQLContext context, TypeDefinitionRegistry mergedTypeDefinitionRegistry)
+    {
+        // ask handlers to add custom types
+        // go through the handlers
+        List<CPTAGraphQLHandler> handlers = getHandlers(context);
+
+        for(CPTAGraphQLHandler currentHandler:handlers)
+        {
+            currentHandler.addCustomTypeDefinitionsToRegistry(CPTAGraphQLQueryType.MUTATION, context, mergedTypeDefinitionRegistry);
+        }
     }
 
     protected void handleInitialiseSubscriptionRequest(JsonObject queryAsJson) throws IOException
@@ -345,6 +357,9 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
                 mergedTypeDefinitionRegistry.merge(schemaTypeDefinitionRegistry);              
         }
 
+        // Add custom type definitions
+        addCustomTypeDefinitionsToRegistry(context, mergedTypeDefinitionRegistry);
+
         return mergedTypeDefinitionRegistry;
     }
 
@@ -392,7 +407,7 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
     protected void addTypeResolversForSubscription(graphql.schema.idl.RuntimeWiring.Builder subscriptionRuntimeWiringBuilder, GraphQLContext context) throws CPTAException
     {
         // get the handlers
-        List<CPTAGraphQLHandler> handlers = getHandlers();
+        List<CPTAGraphQLHandler> handlers = getHandlers(context);
 
         // for each handler add type resolvers
         for(CPTAGraphQLHandler currentHandler : handlers)
@@ -406,7 +421,7 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         Map<String, DataFetcher<?>> allDataFetchers = new ConcurrentHashMap<>();
 
         // Get all the handlers
-        List<CPTAGraphQLHandler> handlers = getHandlers();
+        List<CPTAGraphQLHandler> handlers = getHandlers(context);
         
         // for each handler add data handlers
         for(CPTAGraphQLHandler currentHandler: handlers)

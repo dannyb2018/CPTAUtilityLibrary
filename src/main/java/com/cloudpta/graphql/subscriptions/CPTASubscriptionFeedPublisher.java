@@ -113,11 +113,23 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
                 // Get results
                 List<ResultType> results = getResults();
 
-                // pass on to subscriber
-                for (ResultType result : results) 
+                // if there are results
+                if(false == results.isEmpty())
                 {
-                    emitter.onNext(result);
+                    // pass on to subscriber
+                    for (ResultType result : results) 
+                    {
+                        emitter.onNext(result);
+                    }
                 }
+                // if we timed out with no results
+                else
+                {
+                    // send a keep alive
+                    // BUGBUGDB hate this hack... find a better way
+                    emitter.onNext(null);
+                }
+
             }
         }
         // Any errors, let the subscriber know
@@ -138,6 +150,7 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
         try
         {
             List<JsonObject> results = readFromSource(timeout);
+
             // Convert the json Objects to results
             for(JsonObject currentResultAsJson: results)
             {

@@ -46,6 +46,11 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
     public CPTAKafkaSubscriptionFeedPublisher(RequestType input)
     {
         super(input);
+
+        // Set up where the data for the feed
+        setupSource();
+
+        start();
     }
 
     @Override
@@ -74,6 +79,7 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
         props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
         // Get the names of topics to read from, comma delimited
+        topics = new ArrayList<>();
         String topicsToBrowseAsCommaDelimitedString = context.get(CPTAGraphQLAPIConstants.KAFKA_TOPIC_TO_BROWSE);
         String[] topicsAsArray = topicsToBrowseAsCommaDelimitedString.split(",");
         int numberOfTopics = Array.getLength(topicsAsArray);
@@ -89,7 +95,6 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
         // Set up schema parser
         schema = new Schema.Parser().parse(schemaToUse);
         datumReader = new GenericDatumReader<GenericRecord>(schema);
-        
     }
 
     @Override
@@ -142,5 +147,5 @@ public abstract class CPTAKafkaSubscriptionFeedPublisher<ResultType,RequestType 
     protected Schema schema;
     protected GenericDatumReader<GenericRecord> datumReader;
     protected KafkaConsumer<byte[], byte[]> consumer = null;
-    protected List<String> topics = new ArrayList<>();
+    protected List<String> topics = null;
 }

@@ -168,7 +168,7 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
             responseStream.subscribe(resultStreamSubscriber);
         
             // save it
-            subscription = resultStreamSubscriber;
+            subscriptions.put(id, resultStreamSubscriber);
         }
     }
 
@@ -177,8 +177,12 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         // Get id
         String id = queryAsJson.getString(CPTAGraphQLAPIConstants.PAYLOAD_ID);
         // Stop the subscription
-        subscription.stop();
-        subscription = null;      
+        CPTASubscriptionFeed subscriptionToStop = subscriptions.get(id);
+        subscriptionToStop.stop();
+        
+        // remove the subscription
+        subscriptions.remove(id);
+        subscriptionToStop = null;      
     }
 
     protected void handleIncomingMessage(String queryAsString) 
@@ -414,8 +418,8 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         return allDataFetchers;
     }
 
-    protected CPTASubscriptionFeed subscription = null;
-    //protected Map<String, QPSubscriptionFeed> subscriptions = new ConcurrentHashMap<>();
+//    protected CPTASubscriptionFeed subscription = null;
+    protected Map<String, CPTASubscriptionFeed> subscriptions = new ConcurrentHashMap<>();
     protected JsonObject requestParamsForSubscription = null;
     protected Logger socketLogger = CPTALogger.getLogger();    
     protected Session socketSession;    

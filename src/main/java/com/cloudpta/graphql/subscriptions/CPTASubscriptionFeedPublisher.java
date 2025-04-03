@@ -50,9 +50,10 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
             timeout = Long.parseLong(timeoutAsString);
         }
 
-        // Set up where the data for the feed
-        setupSource();
-
+    }
+    
+    protected void start()
+    {
         ObservableOnSubscribeHandler<ResultType,RequestType> observableOnSubscribe = new ObservableOnSubscribeHandler<>(this);
         Observable<ResultType> resultObservable = Observable.create(observableOnSubscribe);
 
@@ -63,7 +64,7 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
         CancelSubscriptionHandler<ResultType, RequestType> cancelHandler = new CancelSubscriptionHandler<>(this);
         publisher = connectableObservable.toFlowable(BackpressureStrategy.BUFFER).doOnCancel(cancelHandler);
     }
-    
+
     public Flowable<ResultType> getPublisher() 
     {
         return publisher;
@@ -113,23 +114,12 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
                 // Get results
                 List<ResultType> results = getResults();
 
-                // if there are results
-                if(false == results.isEmpty())
+                // pass on to subscriber
+                for (ResultType result : results) 
                 {
-                    // pass on to subscriber
-                    for (ResultType result : results) 
-                    {
-                        emitter.onNext(result);
-                    }
+                    emitter.onNext(result);
                 }
-                // if we timed out with no results
-                else
-                {
-                    // send a keep alive
-                    // BUGBUGDB hate this hack... find a better way
-                    emitter.onNext(null);
-                }
-
+                
             }
         }
         // Any errors, let the subscriber know
@@ -185,7 +175,7 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
 
     protected GraphQLContext context;
     protected RequestType request;
-    protected final Flowable<ResultType> publisher;
+    protected Flowable<ResultType> publisher;
     protected long timeout = 500; 
     protected AtomicBoolean shouldRun = new AtomicBoolean();
     protected ObservableEmitter<ResultType> currentEmitter;

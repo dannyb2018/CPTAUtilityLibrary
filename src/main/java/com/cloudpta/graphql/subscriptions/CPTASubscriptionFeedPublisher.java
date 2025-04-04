@@ -99,6 +99,13 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
         // Finally unsubscribe from source
         unsubscribeFromSource();
 
+        // remove from link of publisher to feed
+        if(null != publisher)
+        {
+            int hashcode = publisher.hashCode();
+            CPTASubscriptionFeed.removePublisherToFeedLink(hashcode);
+        }
+
         // wipe our memory of the emitter and thread
         currentEmitter = null;
         resultsThread = null;
@@ -151,6 +158,20 @@ public abstract class CPTASubscriptionFeedPublisher<ResultType,RequestType exten
                 {
                     // Add to list
                     updates.add(currentResult);
+                }
+            }
+
+            // if we are empty
+            if(true == results.isEmpty())
+            {
+                // get the feed for this publisher
+                if(null != publisher)
+                {
+                    int hashCode = publisher.hashCode();
+                    CPTASubscriptionFeed feedForThisPublisher = CPTASubscriptionFeed.getFeedForPublisher(hashCode);
+
+                    // do a keep alive
+                    feedForThisPublisher.keepAlive();
                 }
             }
         }

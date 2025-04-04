@@ -21,6 +21,7 @@ package com.cloudpta.graphql.subscriptions;
 
 import java.io.StringReader;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.utilites.logging.CPTALogger;
@@ -44,7 +45,8 @@ public class CPTASubscriptionFeed implements Subscriber<ExecutionResult>
     Session socketSession;
     AtomicReference<Subscription> subscriptionRef;
     String id;
-    
+    protected static Map<Integer, CPTASubscriptionFeed> mapFeedPublisherToFeeds = new ConcurrentHashMap<>();
+
     public CPTASubscriptionFeed(Session websocketSession, AtomicReference<Subscription> subscriptionRef, String subscriptionID)
     {
         socketSession = websocketSession;
@@ -148,6 +150,23 @@ public class CPTASubscriptionFeed implements Subscriber<ExecutionResult>
             // shutting down anyway so just log this
             CPTAException wrappedException  = new CPTAException(E);
         }  
+    }
+
+    public void savePublisherToFeedLink(int publisherHashCode)
+    {
+        mapFeedPublisherToFeeds.put(publisherHashCode, this);
+    }
+
+    public static CPTASubscriptionFeed getFeedForPublisher(int publisherHashCode)
+    {
+        CPTASubscriptionFeed feedForPublisher = mapFeedPublisherToFeeds.get(publisherHashCode);
+
+        return feedForPublisher;
+    }
+
+    public static void removePublisherToFeedLink(int publisherHashCode)
+    {
+        mapFeedPublisherToFeeds.remove(publisherHashCode);
     }
 
     public void keepAlive()

@@ -51,6 +51,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.execution.reactive.SubscriptionPublisher;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -58,6 +59,7 @@ import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.TypeRuntimeWiring;
+import io.reactivex.rxjava3.core.Flowable;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -150,6 +152,10 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
         // Get publisher of that result        
         Publisher<ExecutionResult> responseStream = executionResult.getData();
 
+        // get the data fetcher publisher 
+        SubscriptionPublisher responseStreamAsPublisher = (SubscriptionPublisher)responseStream;
+        int fetcherPublisherHashCode = responseStreamAsPublisher.getUpstreamPublisher().hashCode();
+        
         // If there are errors
         if((0 < errors.size()) || (null == responseStream))
         {
@@ -175,6 +181,8 @@ public abstract class CPTASubscriptionHandlerSocket extends CPTAWebSocket
             // Create a subscription
             AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
             CPTASubscriptionFeed resultStreamSubscriber = new CPTASubscriptionFeed(socketSession, subscriptionRef, id);
+            // make it possible to get subscriber
+            resultStreamSubscriber.savePublisherToFeedLink(fetcherPublisherHashCode);
 
             // Subscribe to this stream
             responseStream.subscribe(resultStreamSubscriber);

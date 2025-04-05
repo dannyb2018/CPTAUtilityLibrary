@@ -19,13 +19,42 @@ limitations under the License.
 */
 package com.cloudpta.graphql.subscriptions.protocol.event;
 
+import java.util.Map;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 
 public class CPTAWebsocketProtocolSubscribeRequestEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
-    protected CPTAWebsocketProtocolSubscribeRequestEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    protected CPTAWebsocketProtocolSubscribeRequestEvent
+                                                       (
+                                                       CPTAWebsocketProtocolStateMachine newMachine,
+                                                       String newSubscriptionID,
+                                                       String newOperationName,
+                                                       Map<String, Object> newVariables
+                                                       ) 
     {
         super(newMachine);
+
+        subscriptionID = newSubscriptionID;
+        operationName = newOperationName;
+        variables = newVariables;
     }
 
+    public String getSubscriptionID()
+    {
+        return subscriptionID;
+    }
+
+    public String getOperationName()
+    {
+        return operationName;
+    }
+
+    public Map<String, Object> getVariables()
+    {
+        return variables;
+    }
+
+    protected String subscriptionID = null;
+    protected String operationName = null;
+    protected Map<String, Object> variables = null;
 }

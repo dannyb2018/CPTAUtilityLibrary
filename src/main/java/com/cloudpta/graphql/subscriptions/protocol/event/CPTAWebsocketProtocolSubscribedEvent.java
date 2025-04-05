@@ -27,6 +27,8 @@ public class CPTAWebsocketProtocolSubscribedEvent extends CPTAWebsocketProtocolS
     protected CPTAWebsocketProtocolSubscribedEvent(CPTAWebsocketProtocolStateMachine newMachine) 
     {
         super(newMachine);
+
+        eventType = CPTAWebsocketProtocolMachineEventType.SUBSCRIBED;
     }
     
 }

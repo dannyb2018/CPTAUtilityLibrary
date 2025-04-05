@@ -19,17 +19,31 @@ limitations under the License.
 */
 package com.cloudpta.graphql.subscriptions.protocol.event;
 
+import java.util.Map;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 
 public class CPTAWebsocketProtocoLogonRequestEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
 
-    protected CPTAWebsocketProtocoLogonRequestEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    protected CPTAWebsocketProtocoLogonRequestEvent
+                                                  (
+                                                  CPTAWebsocketProtocolStateMachine newMachine,
+                                                  Map<String, String> newLogonRequestParameters
+                                                  ) 
     {
         super(newMachine);
 
         // set event type to error
         eventType = CPTAWebsocketProtocolMachineEventType.LOG_ON_REQUESTED;
+
+        // save the logon request parameters
+        logonRequestParameters = newLogonRequestParameters;
+    }
+
+    public Map<String, String> getLogonRequestParameters()
+    {
+        return logonRequestParameters;
     }
     
+    protected Map<String, String> logonRequestParameters;
 }

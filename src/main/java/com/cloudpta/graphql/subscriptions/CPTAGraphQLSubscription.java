@@ -22,13 +22,18 @@ package com.cloudpta.graphql.subscriptions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import com.cloudpta.graphql.common.CPTAGraphQLInput;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import graphql.ExecutionResult;
 import graphql.GraphQLContext;
+import graphql.execution.reactive.SubscriptionPublisher;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observable;
@@ -37,27 +42,56 @@ import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 import io.reactivex.rxjava3.functions.Action;
 import io.reactivex.rxjava3.observables.ConnectableObservable;
 import jakarta.json.JsonObject;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.config.PropertyNamingStrategy;
 
 // We have the publisher and subscriber as the same class because we want to have the option to do keep alives which 
 // reactive streams bizarrely doesnt allow for
-public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPTAGraphQLInput> implements Subscriber<ExecutionResult>
+public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPTAGraphQLInput> implements Subscriber<ExecutionResult>, ObservableOnSubscribe<ResultType>, Action
 {
-    protected void start()
+    public static CPTAGraphQLSubscription<?, ?> getSubscription(Publisher<ExecutionResult> publisher)
     {
-        ObservableOnSubscribeHandler<ResultType,RequestType> observableOnSubscribe = new ObservableOnSubscribeHandler<>(this);
-        Observable<ResultType> resultObservable = Observable.create(observableOnSubscribe);
+        // get the data fetcher publisher 
+        SubscriptionPublisher responseStreamAsPublisher = (SubscriptionPublisher)publisher;
+        int fetcherPublisherHashCode = responseStreamAsPublisher.getUpstreamPublisher().hashCode();
+
+        // look in map
+        CPTAGraphQLSubscription<?, ?> desiredSubscription = mapPublishersToSubscriptions.get(fetcherPublisherHashCode);
+
+        return desiredSubscription;
+    }
+
+    public void initialise()
+    {
+        Observable<ResultType> resultObservable = Observable.create(this);
 
         ConnectableObservable<ResultType> connectableObservable = resultObservable.share().publish();
         connectableObservable.connect();
 
         // going to wait to be told when the subscription is cancelled
-        CancelSubscriptionHandler<ResultType, RequestType> cancelHandler = new CancelSubscriptionHandler<>(this);
-        publisher = connectableObservable.toFlowable(BackpressureStrategy.BUFFER).doOnCancel(cancelHandler);
+        publisher = connectableObservable.toFlowable(BackpressureStrategy.BUFFER).doOnCancel(this);
+
+        // get publisher hash key
+        int publisherID = publisher.hashCode();
+        // store the subscriptions
+        mapPublishersToSubscriptions.put(publisherID, this);
     }
 
     public Flowable<ResultType> getPublisher() 
     {
         return publisher;
+    }
+
+    public void setListener(CPTAGraphQLSubscriptionListener newListener)
+    {
+        listener = newListener;
+    }
+
+    public void setID(String newID)
+    {
+        id = newID;
     }
 
     protected void handleSubscribe(ObservableEmitter<ResultType> emitter) throws Throwable
@@ -162,39 +196,152 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         return updates;
     }
 
+    public abstract void parseArguments(RequestType input);
+
     protected abstract ResultType convertFromJson(JsonObject recordAsJson);
     protected abstract void setupSource();
     protected abstract void subscribeToSource();
     protected abstract void unsubscribeFromSource();
     protected abstract List<JsonObject> readFromSource(long timeout) throws IOException;
-    public abstract void parseArguments(RequestType input);
 
     @Override
     public void onSubscribe(Subscription s) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onSubscribe'");
+        subscriptionRef.set( s);
+        // Request maximum amount
+        subscriptionRef.get().request(Long.MAX_VALUE);
     }
 
     @Override
-    public void onNext(ExecutionResult t) 
+    public void onNext(ExecutionResult executionResult) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onNext'");
+        try 
+        {
+            Map<String, Object> spec = executionResult.toSpecification();
+
+            // Convert that result into a json string
+            JsonbConfig jsonbConfig = new JsonbConfig()
+                                        .withPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CASE_WITH_UNDERSCORES)
+                                        .withNullValues(true)
+                                        .withFormatting(false);
+            Jsonb converter = JsonbBuilder.create(jsonbConfig);
+            String nextMessage = converter.toJson(spec);
+
+            // handle new result
+            listener.handleNextMessageSend(this, nextMessage);
+
+//            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
+//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
+//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, resultObject);
+//            JsonObject responseObject = responseObjectBuilder.build();
+//            String responseAsString = responseObject.toString();
+//            socketSession.getRemote().sendString(responseAsString);
+
+            // get next ones
+            subscriptionRef.get().request(Long.MAX_VALUE);
+        } 
+        catch (Exception e) 
+        {
+            // pass it to the error handler
+            onError(e);
+        }        
     }
 
     @Override
-    public void onError(Throwable t) 
+    public void onError(Throwable error) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onError'");
+        CPTAException wrappedException  = new CPTAException(error);
+
+        listener.handleError(this, wrappedException);
+
+        // remove from list of subscriptions
+        // get publisher hash key
+        int publisherID = publisher.hashCode();
+        // store the subscriptions
+        mapPublishersToSubscriptions.remove(publisherID);
+
+        // If the socket is still open
+//        if( true == socketSession.isOpen())
+        {
+            // write back an error somehow
+  //          JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+    //        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_ERROR);
+ //           responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
+ //           responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, wrappedException.getErrors().toString());
+ //           JsonObject responseObject = responseObjectBuilder.build();
+ //           String responseAsString = responseObject.toString();
+ //           try
+            {
+ //               socketSession.getRemote().sendString(responseAsString); 
+            } 
+ //           catch(Exception E2)
+            {
+                // shutting down anyway so just log this
+   //             CPTAException wrappedException2  = new CPTAException(E2);
+            }  
+    
+        }
+
+        // Get the text of exception and log it
+        
+     //   socketSession.close();
     }
 
     @Override
     public void onComplete() 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onComplete'");
+        listener.handleClose(this);
+
+        // remove from list of subscriptions
+        // get publisher hash key
+        int publisherID = publisher.hashCode();
+        // store the subscriptions
+        mapPublishersToSubscriptions.remove(publisherID);
+
+        // Need to shut down properly, so send back a stop message
+//        JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
+//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_STOP);
+//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
+//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, "");
+//        JsonObject responseObject = responseObjectBuilder.build();
+//        String responseAsString = responseObject.toString();
+
+//        try
+        {
+//            socketSession.getRemote().sendString(responseAsString); 
+        } 
+//        catch(Exception E)
+        {
+            // shutting down anyway so just log this
+  //          CPTAException wrappedException  = new CPTAException(E);
+        }  
+    }
+
+    @Override
+    public void subscribe(ObservableEmitter<ResultType> emitter) throws Throwable
+    {
+        try
+        {
+            handleSubscribe(emitter);
+        }
+        catch(Throwable E)
+        {
+
+        }
+    }
+
+    @Override
+    public void run() throws Throwable
+    {
+        try
+        {
+            handleUnsubscribe();
+        }
+        catch(Throwable E)
+        {
+
+        }
     }
 
     protected String id;
@@ -204,36 +351,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
     protected long timeout = 500; 
     protected AtomicBoolean shouldRun = new AtomicBoolean();
     protected ObservableEmitter<ResultType> currentEmitter;
-}
-
-class ObservableOnSubscribeHandler<ResultType,RequestType extends CPTAGraphQLInput> implements ObservableOnSubscribe<ResultType>
-{
-    public ObservableOnSubscribeHandler(CPTAGraphQLSubscription<ResultType,RequestType> thePublisher)
-    {
-        publisher = thePublisher;
-    }
-
-    @Override
-    public void subscribe(ObservableEmitter<ResultType> emitter) throws Throwable
-    {
-        publisher.handleSubscribe(emitter);
-    }
-
-    CPTAGraphQLSubscription<ResultType,RequestType> publisher;
-}
-
-class CancelSubscriptionHandler<ResultType, RequestType extends CPTAGraphQLInput> implements Action
-{
-    public CancelSubscriptionHandler(CPTAGraphQLSubscription<ResultType,RequestType> newPublisher)
-    {
-        publisher = newPublisher;
-    }
-    
-    @Override
-    public void run() throws Throwable
-    {
-        publisher.handleUnsubscribe();
-    }
-
-    CPTAGraphQLSubscription<ResultType,RequestType> publisher;
+    protected AtomicReference<Subscription> subscriptionRef;
+    protected CPTAGraphQLSubscriptionListener listener = null;
+    protected static Map<Integer, CPTAGraphQLSubscription<?, ?>> mapPublishersToSubscriptions = new ConcurrentHashMap<>();
 }

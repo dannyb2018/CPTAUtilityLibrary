@@ -30,12 +30,13 @@ import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSu
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribeRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribedEvent;
+import com.cloudpta.utilites.exceptions.CPTAException;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolKeepAliveEvent;
 
 public interface CPTAWebsocketProtocolStateMachineListener 
 {
-    void onSendMessage(CPTAWebsocketProtocolSendMessageEvent sendEvent);
-    void onMessageReceived(CPTAWebsocketProtocolMessageReceivedEvent receiveEvent);
+    void onSendMessage(CPTAWebsocketProtocolSendMessageEvent sendEvent) throws CPTAException;
+//    void onMessageReceived(CPTAWebsocketProtocolMessageReceivedEvent receiveEvent);
 
     void onSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent subscribeRequestedEvent);
     void onSubscribed(CPTAWebsocketProtocolSubscribedEvent subscribedEvent);

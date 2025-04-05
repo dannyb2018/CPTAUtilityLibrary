@@ -33,5 +33,7 @@ public enum CPTAWebsocketProtocolMachineEventType
     SEND_MESSAGE,
 
     SUBSCRIBE_REQUEST,
-    SUBSCRIBED
+    UNSUBSCRIBE_REQUEST,
+    SUBSCRIBED,
+    UNSUBSCRIBED
 }

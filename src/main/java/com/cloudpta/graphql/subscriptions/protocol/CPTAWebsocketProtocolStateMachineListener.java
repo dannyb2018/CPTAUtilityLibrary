@@ -1,0 +1,49 @@
+/*
+
+Copyright 2017-2019 Advanced Products Limited, 
+Copyright 2021-2022 Liquid Markets Limited, 
+github.com/dannyb2018
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
+package com.cloudpta.graphql.subscriptions.protocol;
+
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolErrorEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOffEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOnEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLogoffRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolMessageReceivedEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSendMessageEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribeRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolKeepAliveEvent;
+
+public interface CPTAWebsocketProtocolStateMachineListener 
+{
+    void onSendMessage(CPTAWebsocketProtocolSendMessageEvent sendEvent);
+    void onMessageReceived(CPTAWebsocketProtocolMessageReceivedEvent receiveEvent);
+
+    void onSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent subscribeRequestedEvent);
+    void onSubscribed(CPTAWebsocketProtocolSubscribedEvent subscribedEvent);
+
+    void onLogonRequest(CPTAWebsocketProtocoLogonRequestEvent logonRequestEvent);
+    void onLoggedOn(CPTAWebsocketProtocolLoggedOnEvent loggedOnEvent);
+    void onLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent logoffRequestEvent);
+    void onLoggedoff(CPTAWebsocketProtocolLoggedOffEvent loggedOffEvent);
+
+    void onKeepAlive(CPTAWebsocketProtocolKeepAliveEvent keepAliveEvent);
+
+    void onError(CPTAWebsocketProtocolErrorEvent errorEvent);
+}

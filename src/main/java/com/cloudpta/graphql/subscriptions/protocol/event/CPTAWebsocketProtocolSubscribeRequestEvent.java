@@ -29,14 +29,18 @@ public class CPTAWebsocketProtocolSubscribeRequestEvent extends CPTAWebsocketPro
                                                        CPTAWebsocketProtocolStateMachine newMachine,
                                                        String newSubscriptionID,
                                                        String newOperationName,
-                                                       Map<String, Object> newVariables
+                                                       Map<String, Object> newVariables,
+                                                       String newGraphQLQueryName
                                                        ) 
     {
         super(newMachine);
 
+        eventType = CPTAWebsocketProtocolMachineEventType.SUBSCRIBE_REQUEST;
+
         subscriptionID = newSubscriptionID;
         operationName = newOperationName;
         variables = newVariables;
+        graphQLQueryName = newGraphQLQueryName;
     }
 
     public String getSubscriptionID()
@@ -54,6 +58,12 @@ public class CPTAWebsocketProtocolSubscribeRequestEvent extends CPTAWebsocketPro
         return variables;
     }
 
+    public String getGraphQLQueryName()
+    {
+        return graphQLQueryName;
+    }
+
+    protected String graphQLQueryName = null;
     protected String subscriptionID = null;
     protected String operationName = null;
     protected Map<String, Object> variables = null;

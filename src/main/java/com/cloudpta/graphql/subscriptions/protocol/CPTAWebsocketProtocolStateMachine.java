@@ -31,6 +31,10 @@ import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLo
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLogoffRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolMachineEventType;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolStateMachineEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribeRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribeRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribedEvent;
 
 public abstract class CPTAWebsocketProtocolStateMachine 
 {
@@ -42,6 +46,34 @@ public abstract class CPTAWebsocketProtocolStateMachine
     public void removeWebsocketProtocolStateMachineListener(CPTAWebsocketProtocolStateMachineListener listenerToRemove)
     {
         listeners.remove(listenerToRemove);
+    }
+
+    public void logonAccepted(Map<String, String> newConnectionParameters)
+    {
+        connectionParameters = newConnectionParameters;
+
+        // handle logon accepted
+        handleLogonAccepted();
+    }
+
+    public void subscriptionFailed(CPTAGraphQLSubscription<?, ?> successfulSubscription, Map<String, Object> resultAsJson)
+    {
+
+    }
+
+    public void saveSubscription(CPTAGraphQLSubscription<?, ?> subscriptionToSave)
+    {
+
+    }
+
+    public void subscriptionSucceeded(CPTAGraphQLSubscription<?, ?> successfulSubscription)
+    {
+
+    }
+
+    public Map<String, String> getConnectionParameters()
+    {
+        return connectionParameters;
     }
 
     public abstract void sendData(String data);
@@ -75,6 +107,22 @@ public abstract class CPTAWebsocketProtocolStateMachine
             {
                 handleKeepAlive((CPTAWebsocketProtocolKeepAliveEvent)eventGeneratedByMessage);
             }
+            else if(CPTAWebsocketProtocolMachineEventType.SUBSCRIBE_REQUEST == generatedEventType)
+            {
+                handleSubscribeRequest((CPTAWebsocketProtocolSubscribeRequestEvent)eventGeneratedByMessage);
+            }
+            else if(CPTAWebsocketProtocolMachineEventType.SUBSCRIBED == generatedEventType)
+            {
+                handleSubscribed((CPTAWebsocketProtocolSubscribedEvent)eventGeneratedByMessage);
+            }
+            else if(CPTAWebsocketProtocolMachineEventType.UNSUBSCRIBE_REQUEST == generatedEventType)
+            {
+                handleUnsubscribeRequest((CPTAWebsocketProtocolUnsubscribeRequestEvent)eventGeneratedByMessage);
+            }
+            else if(CPTAWebsocketProtocolMachineEventType.UNSUBSCRIBED == generatedEventType)
+            {
+                handleUnsubscribed((CPTAWebsocketProtocolUnsubscribedEvent)eventGeneratedByMessage);
+            }
         }
         catch(Throwable E)
         {
@@ -91,7 +139,13 @@ public abstract class CPTAWebsocketProtocolStateMachine
     protected abstract void handleLoggedOff(CPTAWebsocketProtocolLoggedOffEvent request);
     protected abstract void handleKeepAlive(CPTAWebsocketProtocolKeepAliveEvent anyAdditionalInformation);
     protected abstract void handleError(Throwable error);
+    protected abstract void handleSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent request);
+    protected abstract void handleSubscribed(CPTAWebsocketProtocolSubscribedEvent request);
+    protected abstract void handleUnsubscribeRequest(CPTAWebsocketProtocolUnsubscribeRequestEvent request);
+    protected abstract void handleUnsubscribed(CPTAWebsocketProtocolUnsubscribedEvent request);
+    protected abstract void handleLogonAccepted();
 
     protected Set<CPTAWebsocketProtocolStateMachineListener> listeners = new HashSet<>();
+    protected Map<String, String> connectionParameters = new ConcurrentHashMap<>();
     protected Map<String, CPTAGraphQLSubscription<?, ?>> mapOfIdsToSubscriptions = new ConcurrentHashMap<>();
 }

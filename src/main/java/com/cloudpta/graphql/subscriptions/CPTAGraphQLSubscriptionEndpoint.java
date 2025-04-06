@@ -20,10 +20,8 @@ limitations under the License.
 package com.cloudpta.graphql.subscriptions;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -32,18 +30,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscription;
 import com.cloudpta.embedded_jetty.CPTAWebSocket;
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
 import com.cloudpta.graphql.common.CPTAGraphQLAuditor;
 import com.cloudpta.graphql.common.CPTAGraphQLHandler;
 import com.cloudpta.graphql.common.CPTAGraphQLQueryType;
-import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachineListener;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
@@ -52,7 +47,6 @@ import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolKe
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOffEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOnEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLogoffRequestEvent;
-import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolMessageReceivedEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSendMessageEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribeRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
@@ -74,10 +68,7 @@ import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.TypeRuntimeWiring;
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonReader;
 
 public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWebsocketProtocolStateMachine> extends CPTAWebSocket implements CPTAWebsocketProtocolStateMachineListener
 {
@@ -153,9 +144,13 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     {
         try
         {
-            // get the text to send
-            String textToSend = sendEvent.getTextToSend();
-            socketSession.getRemote().sendString(textToSend);
+            // if there is a open socket session
+            if(true == socketSession.isOpen())
+            {
+                // get the text to send
+                String messageToSend = sendEvent.getMessageToSend();
+                socketSession.getRemote().sendString(messageToSend);
+            }
         }
         catch(Throwable E)
         {
@@ -226,6 +221,8 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
         subscription.setID(id);
         // save the subscription with the protocol state machine
         protocolStateMachine.saveSubscription(subscription);
+        // set the subscription listener to be the protocol state machine
+        subscription.setListener(protocolStateMachine);
         
         // If there are errors
         if((0 < errors.size()) || (null == responseStream))
@@ -237,33 +234,23 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
         // If there are no errors
         else
         {
-            // Create a subscription
-//            AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
-  //          CPTASubscriptionFeed resultStreamSubscriber = new CPTASubscriptionFeed(socketSession, subscriptionRef, id);
-            // make it possible to get subscriber
-    //        resultStreamSubscriber.savePublisherToFeedLink(fetcherPublisherHashCode);
-
             // Subscribe to this stream
             responseStream.subscribe(subscription);
             // tell protocol machine that we are subscribed
             protocolStateMachine.subscriptionSucceeded(subscription);
-        
-            // save it
-           // subscriptions.put(id, resultStreamSubscriber);
         }
     }
 
     @Override
     public void onUnsubscribeRequest(CPTAWebsocketProtocolUnsubscribeRequestEvent subscribeRequestedEvent) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onUnsubscribeRequest'");
+        // for now do nothing
     }
 
     @Override
     public void onUnsubscribed(CPTAWebsocketProtocolUnsubscribedEvent subscribedEvent) 
     {
-        // for now do nothing
+        // remove the subscription
     }
 
 
@@ -276,8 +263,7 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     @Override
     public void onLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent logoffRequestEvent) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onLogoffRequest'");
+        // for now do nothing
     }
 
     @Override
@@ -302,116 +288,6 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     public void onSubscribed(CPTAWebsocketProtocolSubscribedEvent subscribedEvent) 
     {
         // for now do nothing
-    }
-
-    // BUGBUGDB old handlers for protocol
-    protected void handleInitialiseSubscriptionRequest(JsonObject queryAsJson) throws IOException
-    {
-        // Get the payload
-  //      connectionInitialisationParameters = queryAsJson.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD); 
-        // convert to 
-     //   Map<String, String> socketRequestDetails = convertRequestToMap(connectionInitialisationParameters, socketSession);
-        // send ack back
-        socketSession.getRemote().sendString(CPTAGraphQLAPIConstants.CONNECTION_INIT_RESPONSE);
-    }
-
-    protected void handleStartSubscriptionRequest(JsonObject queryAsJson) throws CPTAException, IOException
-    {
-        // Get id
-        String id = queryAsJson.getString(CPTAGraphQLAPIConstants.PAYLOAD_ID);
-        // handle query
-        queryAsJson = queryAsJson.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD);  
-        // Get operation name
-        String operationName = null;
-        if(false == queryAsJson.isNull(CPTAGraphQLAPIConstants.OPERATION_NAME))
-        {
-            operationName = queryAsJson.getString(CPTAGraphQLAPIConstants.OPERATION_NAME);
-        }
-        // get the query field
-        String graphQLQuery = queryAsJson.getString(CPTAGraphQLAPIConstants.OPERATION_TEXT);
-        // Need to turn variables into a map of keys and values
-        JsonObject variablesAsJsonObject = queryAsJson.getJsonObject(CPTAGraphQLAPIConstants.OPERATION_VARIABLES);
-        Map<String, Object> variables = CPTAQueryVariablesParser.parseVariables(variablesAsJsonObject);
-
-        // Build the context for the query
-        GraphQLContext contextForQuery = GraphQLContext.newContext().build();
-        // Get the request params
-    //    Map<String, String> socketRequestDetails = convertRequestToMap(connectionInitialisationParameters, socketSession);
-    //    initialiseContext(contextForQuery, socketRequestDetails, graphQLQuery, operationName, variablesAsJsonObject);
-
-        // Set up all the graphql if need to
-        GraphQL build = getGraphQL(contextForQuery);
-
-        // run an audit
-        CPTAGraphQLAuditor auditor = CPTAGraphQLAuditor.getAuditor(contextForQuery);
-        auditor.audit(contextForQuery);
-
-
-        // Build the input for the query
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                                                    .query(graphQLQuery)
-                                                    .operationName(operationName)
-                                                    .localContext(contextForQuery)
-                                                    .variables(variables)
-                                                    .build();        
-        // Get result
-        ExecutionResult executionResult = build.execute(executionInput); 
-        // Check if there are any errors
-        List<GraphQLError> errors = executionResult.getErrors();
-        // Get publisher of that result        
-        Publisher<ExecutionResult> responseStream = executionResult.getData();
-
-        // get the data fetcher publisher 
-        SubscriptionPublisher responseStreamAsPublisher = (SubscriptionPublisher)responseStream;
-        int fetcherPublisherHashCode = responseStreamAsPublisher.getUpstreamPublisher().hashCode();
-        
-        // If there are errors
-        if((0 < errors.size()) || (null == responseStream))
-        {
-            JsonObjectBuilder response = Json.createObjectBuilder();
-            // Add type
-            response.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
-            // Add id
-            response.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
-
-            // Add payload
-            // This is the execution result as json
-            Map<String, Object> resultAsJson = executionResult.toSpecification();
-            JsonObjectBuilder payloadAsJson = Json.createObjectBuilder(resultAsJson);
-            response.add(CPTAGraphQLAPIConstants.PAYLOAD, payloadAsJson);
-
-            // Convert that result into a json string
-            String resultAsString = response.build().toString();
-            socketSession.getRemote().sendString(resultAsString);
-        }   
-        // If there are no errors
-        else
-        {
-            // Create a subscription
-            AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
-            CPTASubscriptionFeed resultStreamSubscriber = new CPTASubscriptionFeed(socketSession, subscriptionRef, id);
-            // make it possible to get subscriber
-            resultStreamSubscriber.savePublisherToFeedLink(fetcherPublisherHashCode);
-
-            // Subscribe to this stream
-            responseStream.subscribe(resultStreamSubscriber);
-        
-            // save it
-           // subscriptions.put(id, resultStreamSubscriber);
-        }
-    }
-
-    protected void handleStopSubscriptionRequest(JsonObject queryAsJson)
-    {
-        // Get id
-   //     String id = queryAsJson.getString(CPTAGraphQLAPIConstants.PAYLOAD_ID);
-        // Stop the subscription
-     //   CPTASubscriptionFeed subscriptionToStop = subscriptions.get(id);
-     //   subscriptionToStop.stop();
-        
-        // remove the subscription
-    //    subscriptions.remove(id);
-    //    subscriptionToStop = null;      
     }
 
     protected Map<String, String> getConnectionInitialisationParameters(Map<String, String> logonRequestParameters, Session socketSession)
@@ -449,6 +325,7 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
 
         return initialisationParameters;
     }
+
     protected void initialiseContext(GraphQLContext contextToInitialise, Map<String, String> socketRequestDetails, String operationName, String operationAsString, Map<String, Object> variables)
     {
         // Default just saves the operation name, operation as string, request and variables
@@ -613,6 +490,8 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
         CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine> newInstance = returnNewEndpoint();
         // initialise protocol engine
         newInstance.returnNewProtocolStateMachine();
+        // add listener for protocol events
+        protocolStateMachine.addWebsocketProtocolStateMachineListener(newInstance);
 
         // return endpoint
         return newInstance;
@@ -623,7 +502,7 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     {
         try
         {
-            protocolStateMachine.handleIncomingData(queryAsString);
+            protocolStateMachine.handleIncomingMessage(queryAsString);
             // Parse the query
          //   JsonReader reader = Json.createReader(new StringReader(queryAsString));
          //   JsonObject queryObject = reader.readObject(); 
@@ -663,14 +542,13 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     @Override
     protected void handleClose(int statusCode, String reason) 
     {
-        System.out.println(reason);
+        protocolStateMachine.handleConnectionClosed();
     }
 
     @Override
     protected void handleError(Throwable t) 
     {
-        t.printStackTrace();
-        // Not used
+        protocolStateMachine.handleConnectionClosed();
     }
     
     protected Logger socketLogger = CPTALogger.getLogger();    

@@ -94,6 +94,18 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         id = newID;
     }
 
+    public String getID()
+    {
+        return id;
+    }
+
+    public long getMessagesAndPublishThem()
+    {
+        long numberOfMessages = getNewResults(currentEmitter);
+
+        return numberOfMessages;
+    }   
+
     protected void handleSubscribe(ObservableEmitter<ResultType> emitter) throws Throwable
     {
         // Start subscribing to source
@@ -122,23 +134,23 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         currentEmitter = null;
     }
 
-    protected void getNewResults(ObservableEmitter<ResultType> emitter) 
+    protected long getNewResults(ObservableEmitter<ResultType> emitter) 
     {
+
+        long numberOfResults = 0;
+
         try
         {
-            // Whilst we should still get results
-            while(true == shouldRun.get())
-            {
-                // Get results
-                List<ResultType> results = getResults();
+            // Get results
+            List<ResultType> results = getResults();
 
-                // pass on to subscriber
-                for (ResultType result : results) 
-                {
-                    emitter.onNext(result);
-                }
-                
-            }
+            // pass on to subscriber
+            for (ResultType result : results) 
+            {
+                emitter.onNext(result);
+            }    
+            
+            numberOfResults = results.size();
         }
         // Any errors, let the subscriber know
         catch(CPTAException E)
@@ -149,6 +161,8 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         {
             emitter.onError(rte);
         }
+
+        return numberOfResults;
     }  
     
     protected List<ResultType> getResults() throws CPTAException
@@ -169,20 +183,6 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
                 {
                     // Add to list
                     updates.add(currentResult);
-                }
-            }
-
-            // if we are empty
-            if(true == results.isEmpty())
-            {
-                // get the feed for this publisher
-                if(null != publisher)
-                {
-                    int hashCode = publisher.hashCode();
-                    CPTASubscriptionFeed feedForThisPublisher = CPTASubscriptionFeed.getFeedForPublisher(hashCode);
-
-                    // do a keep alive
-                    feedForThisPublisher.keepAlive();
                 }
             }
         }
@@ -217,6 +217,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
     {
         try 
         {
+            // BUGBUGDB would be nice to do this inside the endpoint rather than having graphql stuff in more than one place
             Map<String, Object> spec = executionResult.toSpecification();
 
             // Convert that result into a json string
@@ -225,10 +226,10 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
                                         .withNullValues(true)
                                         .withFormatting(false);
             Jsonb converter = JsonbBuilder.create(jsonbConfig);
-            String nextMessage = converter.toJson(spec);
+            String nextResult = converter.toJson(spec);
 
             // handle new result
-            listener.handleNextMessageSend(this, nextMessage);
+            listener.handleNextResultSend(this, nextResult);
 
 //            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
 //            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
@@ -331,6 +332,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         }
     }
 
+    // called by action when subscription is cancelled
     @Override
     public void run() throws Throwable
     {

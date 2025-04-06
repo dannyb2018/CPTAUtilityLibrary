@@ -19,18 +19,28 @@ limitations under the License.
 */
 package com.cloudpta.graphql.subscriptions.protocol.event;
 
+import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 
 public class CPTAWebsocketProtocolErrorEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
 
-    protected CPTAWebsocketProtocolErrorEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    public CPTAWebsocketProtocolErrorEvent
+                                         (
+                                         CPTAWebsocketProtocolStateMachine newMachine, 
+                                         CPTAGraphQLSubscription<?, ?> newSubscription, 
+                                         Throwable newError
+                                         ) 
     {
         super(newMachine);
 
         // set event type to error
         eventType = CPTAWebsocketProtocolMachineEventType.ERROR;
+
+        subscription = newSubscription;
+        error = newError;
     }
     
-    protected String errorMessage;
+    protected CPTAGraphQLSubscription<?, ?> subscription; 
+    protected Throwable error;
 }

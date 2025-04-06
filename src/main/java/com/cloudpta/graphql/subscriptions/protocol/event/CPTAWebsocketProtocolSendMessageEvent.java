@@ -21,15 +21,22 @@ package com.cloudpta.graphql.subscriptions.protocol.event;
 
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 
-public abstract class CPTAWebsocketProtocolSendMessageEvent extends CPTAWebsocketProtocolStateMachineEvent
+public class CPTAWebsocketProtocolSendMessageEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
-    protected CPTAWebsocketProtocolSendMessageEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    public CPTAWebsocketProtocolSendMessageEvent(CPTAWebsocketProtocolStateMachine newMachine, String newMessageToSend) 
     {
         super(newMachine);
 
         // set event type to send message
         eventType = CPTAWebsocketProtocolMachineEventType.SEND_MESSAGE;
+
+        messageToSend = newMessageToSend;
     }
     
-    public abstract String getTextToSend();
+    public String getMessageToSend()
+    {
+        return messageToSend;
+    }
+
+    protected String messageToSend;
 }

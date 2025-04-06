@@ -23,7 +23,7 @@ import com.cloudpta.utilites.exceptions.CPTAException;
 
 public interface CPTAGraphQLSubscriptionListener
 {
-    public void handleNextMessageSend(CPTAGraphQLSubscription<?, ?> subscription, String newMessage);
+    public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, String nextResultAsString);
     public void handleError(CPTAGraphQLSubscription<?, ?> subscription, CPTAException error);
     public void handleClose(CPTAGraphQLSubscription<?, ?> subscription);
 }

@@ -19,16 +19,19 @@ limitations under the License.
 */
 package com.cloudpta.graphql.subscriptions.protocol.event;
 
+import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 
 public class CPTAWebsocketProtocolUnsubscribedEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
-
-    protected CPTAWebsocketProtocolUnsubscribedEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    public CPTAWebsocketProtocolUnsubscribedEvent(CPTAWebsocketProtocolStateMachine newMachine, CPTAGraphQLSubscription<?, ?> newSubscription) 
     {
         super(newMachine);
         
         eventType = CPTAWebsocketProtocolMachineEventType.UNSUBSCRIBED;
+
+        subscription = newSubscription;
     }
     
+    protected CPTAGraphQLSubscription<?, ?> subscription;
 }

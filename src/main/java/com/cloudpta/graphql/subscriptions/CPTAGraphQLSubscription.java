@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
 import com.cloudpta.graphql.common.CPTAGraphQLInput;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import graphql.ExecutionResult;
@@ -63,8 +64,21 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         return desiredSubscription;
     }
 
-    public void initialise()
+    public void initialise(RequestType input)
     {
+        // parse arguments
+        parseArguments(input);
+
+        // Get the context from the request
+        context = input.getInputContext();
+        // Get the timeout
+        String timeoutAsString = context.get(CPTAGraphQLAPIConstants.SUBSCRIPTION_TIMEOUT);
+        // If there is one
+        if(null != timeoutAsString)
+        {
+            timeout = Long.parseLong(timeoutAsString);
+        }
+
         Observable<ResultType> resultObservable = Observable.create(this);
 
         ConnectableObservable<ResultType> connectableObservable = resultObservable.share().publish();
@@ -113,6 +127,9 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
 
     protected void handleSubscribe(ObservableEmitter<ResultType> emitter) throws Throwable
     {
+        // set up source
+        setupSource();
+
         // Start subscribing to source
         subscribeToSource();
 

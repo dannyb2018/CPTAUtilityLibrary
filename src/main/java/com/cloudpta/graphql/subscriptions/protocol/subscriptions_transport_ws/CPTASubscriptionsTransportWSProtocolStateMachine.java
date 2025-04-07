@@ -125,8 +125,18 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     @Override
     protected String getMesageFromResult(CPTAGraphQLSubscription<?, ?> subscription, String resultAsString) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMesageFromResult'");
+        // get subscription ID
+        String subscriptionID = subscription.getID();
+
+        // generate a data message
+        JsonObjectBuilder dataMessageAsObjectBuilder = Json.createObjectBuilder();
+        dataMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
+        dataMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, subscriptionID);
+        dataMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, resultAsString);
+        JsonObject dataMessageAsObject = dataMessageAsObjectBuilder.build();
+        String dataMessageAsString = dataMessageAsObject.toString();
+
+        return dataMessageAsString;
     }
 
     @Override
@@ -166,8 +176,6 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     @Override
     protected void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent request) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleLoggedOn'");
     }
 
     @Override

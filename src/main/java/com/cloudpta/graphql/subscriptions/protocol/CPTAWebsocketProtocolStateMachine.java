@@ -99,11 +99,7 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
     public void handleConnectionClosed()
     {
-        // if there is a thread
-        if(null != pumpThread)
-        {
-            // stop it
-        }
+        stopPumpingSubscriptions();
     }
 
     public Map<String, String> getConnectionParameters()
@@ -236,6 +232,57 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         }
     }
 
+    protected void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent loggedOnEvent)
+    {
+        // tell all the listeners
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onLoggedOn(loggedOnEvent);
+        }
+    }
+
+    protected void handleSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent subscribeRequestEvent)
+    {
+        // tell all the listeners
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onSubscribeRequest(subscribeRequestEvent);
+        }
+    }
+
+    protected void handleSubscribed(CPTAWebsocketProtocolSubscribedEvent subscribedEvent)
+    {
+        // tell all the listeners
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onSubscribed(subscribedEvent);
+        }        
+    }
+
+    protected void handleUnsubscribeRequest(CPTAWebsocketProtocolUnsubscribeRequestEvent unsubscribeRequestEvent)
+    {
+        // tell all the listeners
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onUnsubscribeRequest(unsubscribeRequestEvent);
+        }    
+        
+        // get the subscription
+        String subscriptionToCloseID = unsubscribeRequestEvent.getSubscriptionID();
+        CPTAGraphQLSubscription<?, ?> subscriptionToClose = mapOfIdsToSubscriptions.get(subscriptionToCloseID);
+        // close it
+        subscriptionToClose.shutdown();
+    }
+
+    protected void handleUnsubscribed(CPTAWebsocketProtocolUnsubscribedEvent unsubscribedEvent)
+    {
+        // tell all the listeners
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onUnsubscribed(unsubscribedEvent);
+        }        
+    }
+
     protected void pumpSubscriptions()
     {
         // get timeout
@@ -357,17 +404,12 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
     protected abstract void validateLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException;
     protected abstract void sendLogonResponse(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException;
+    protected abstract void handleLogonAccepted();
 
-    protected abstract void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent request);
     protected abstract void handleLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent request);
     protected abstract void handleLoggedOff(CPTAWebsocketProtocolLoggedOffEvent request);
     protected abstract void handleKeepAlive(CPTAWebsocketProtocolKeepAliveEvent anyAdditionalInformation);
     protected abstract void handleError(Throwable error);
-    protected abstract void handleSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent request);
-    protected abstract void handleSubscribed(CPTAWebsocketProtocolSubscribedEvent request);
-    protected abstract void handleUnsubscribeRequest(CPTAWebsocketProtocolUnsubscribeRequestEvent request);
-    protected abstract void handleUnsubscribed(CPTAWebsocketProtocolUnsubscribedEvent request);
-    protected abstract void handleLogonAccepted();
 
     protected Set<CPTAWebsocketProtocolStateMachineListener> listeners = new HashSet<>();
     protected Map<String, String> connectionParameters = new ConcurrentHashMap<>();

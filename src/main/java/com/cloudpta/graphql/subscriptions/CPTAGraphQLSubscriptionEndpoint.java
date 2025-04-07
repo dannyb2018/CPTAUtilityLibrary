@@ -502,26 +502,7 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
     {
         try
         {
-            protocolStateMachine.handleIncomingMessage(queryAsString);
-            // Parse the query
-         //   JsonReader reader = Json.createReader(new StringReader(queryAsString));
-         //   JsonObject queryObject = reader.readObject(); 
-         //   String type = queryObject.getString(CPTAGraphQLAPIConstants.PAYLOAD_TYPE);  
-            // If we are an init
-         //   if( 0 == type.compareTo(CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_INIT))
-         //   {
-         //       handleInitialiseSubscriptionRequest(queryObject);
-         //   }
-            // If we are a start
-         //   else if(0 == type.compareTo(CPTAGraphQLAPIConstants.PAYLOAD_TYPE_START))
-         //   {
-         //       handleStartSubscriptionRequest(queryObject);
-         //   }
-            // If we are a stop
-         //   else if(0 == type.compareTo(CPTAGraphQLAPIConstants.PAYLOAD_TYPE_STOP))
-         //   {
-         //       handleStopSubscriptionRequest(queryObject);
-         //   }            
+            protocolStateMachine.handleIncomingMessage(queryAsString);          
         }
         catch(Exception E)
         {

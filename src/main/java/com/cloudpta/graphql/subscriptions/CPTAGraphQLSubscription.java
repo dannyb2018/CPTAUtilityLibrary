@@ -79,6 +79,11 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         mapPublishersToSubscriptions.put(publisherID, this);
     }
 
+    public void shutdown()
+    {
+        subscriptionRef.get().cancel();
+    }
+
     public Flowable<ResultType> getPublisher() 
     {
         return publisher;
@@ -231,14 +236,6 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
             // handle new result
             listener.handleNextResultSend(this, nextResult);
 
-//            JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
-//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_DATA);
-//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
-//            responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, resultObject);
-//            JsonObject responseObject = responseObjectBuilder.build();
-//            String responseAsString = responseObject.toString();
-//            socketSession.getRemote().sendString(responseAsString);
-
             // get next ones
             subscriptionRef.get().request(Long.MAX_VALUE);
         } 
@@ -261,32 +258,6 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         int publisherID = publisher.hashCode();
         // store the subscriptions
         mapPublishersToSubscriptions.remove(publisherID);
-
-        // If the socket is still open
-//        if( true == socketSession.isOpen())
-        {
-            // write back an error somehow
-  //          JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
-    //        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_ERROR);
- //           responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
- //           responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, wrappedException.getErrors().toString());
- //           JsonObject responseObject = responseObjectBuilder.build();
- //           String responseAsString = responseObject.toString();
- //           try
-            {
- //               socketSession.getRemote().sendString(responseAsString); 
-            } 
- //           catch(Exception E2)
-            {
-                // shutting down anyway so just log this
-   //             CPTAException wrappedException2  = new CPTAException(E2);
-            }  
-    
-        }
-
-        // Get the text of exception and log it
-        
-     //   socketSession.close();
     }
 
     @Override
@@ -297,26 +268,10 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         // remove from list of subscriptions
         // get publisher hash key
         int publisherID = publisher.hashCode();
-        // store the subscriptions
+        // remove the subscriptions
         mapPublishersToSubscriptions.remove(publisherID);
-
-        // Need to shut down properly, so send back a stop message
-//        JsonObjectBuilder responseObjectBuilder = Json.createObjectBuilder();
-//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_STOP);
-//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, id);
-//        responseObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, "");
-//        JsonObject responseObject = responseObjectBuilder.build();
-//        String responseAsString = responseObject.toString();
-
-//        try
-        {
-//            socketSession.getRemote().sendString(responseAsString); 
-        } 
-//        catch(Exception E)
-        {
-            // shutting down anyway so just log this
-  //          CPTAException wrappedException  = new CPTAException(E);
-        }  
+        // no need for a listener
+        listener = null;
     }
 
     @Override

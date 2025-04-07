@@ -219,6 +219,22 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         }
     }
 
+    protected void handleLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) 
+    {
+        try
+        {
+            // validate the request
+            validateLogonRequest(request);
+            
+            // send confirm back
+            sendLogonResponse(request);
+        }
+        catch(Throwable E)
+        {
+            handleError(E);
+        }
+    }
+
     protected void pumpSubscriptions()
     {
         // number of messages sent
@@ -256,7 +272,10 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     protected abstract String getMessageFromError(CPTAGraphQLSubscription<?, ?> subscription, Throwable error);
     protected abstract String getKeepAliveMessage();
 
-    protected abstract void handleLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request);
+
+    protected abstract void validateLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException;
+    protected abstract void sendLogonResponse(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException;
+
     protected abstract void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent request);
     protected abstract void handleLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent request);
     protected abstract void handleLoggedOff(CPTAWebsocketProtocolLoggedOffEvent request);

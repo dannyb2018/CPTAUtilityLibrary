@@ -27,16 +27,19 @@ import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
 import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
 import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
+import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachineListener;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolKeepAliveEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOffEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOnEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLogoffRequestEvent;
+import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSendMessageEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolStateMachineEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribeRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribeRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribedEvent;
+import com.cloudpta.utilites.exceptions.CPTAException;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -139,13 +142,6 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     }
 
     @Override
-    protected void handleLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleLogonRequest'");
-    }
-
-    @Override
     protected void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent request) 
     {
         // TODO Auto-generated method stub
@@ -213,6 +209,26 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'handleLogonAccepted'");
+    }
+
+    @Override
+    protected void validateLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException 
+    {
+        // Do nothing for now
+    }
+
+    @Override
+    protected void sendLogonResponse(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException 
+    {
+        // generate response
+        String logonResponse = CPTASubscriptionsTransportWSProtocolConstants.CONNECTION_INIT_RESPONSE;
+        CPTAWebsocketProtocolSendMessageEvent sendEvent = new CPTAWebsocketProtocolSendMessageEvent(this, logonResponse);
+
+        // say send it
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onSendMessage(sendEvent);
+        }
     }
     
 }

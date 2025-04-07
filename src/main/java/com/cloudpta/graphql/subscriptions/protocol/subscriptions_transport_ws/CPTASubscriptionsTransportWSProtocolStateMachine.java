@@ -20,6 +20,11 @@ limitations under the License.
 package com.cloudpta.graphql.subscriptions.protocol.subscriptions_transport_ws;
 
 import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
+import com.cloudpta.graphql.common.CPTAQueryVariablesParser;
 import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
@@ -44,22 +49,63 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
         CPTAWebsocketProtocolStateMachineEvent eventFromMessage = null;
         // convert to json
         JsonReader reader = Json.createReader(new StringReader(message));
-        JsonObject queryObject = reader.readObject(); 
-        String type = queryObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE);  
+        JsonObject messageAsJsonObject = reader.readObject(); 
+        String type = messageAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE);  
         // If we are an init
         if( 0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_CONNECTION_INIT))
         {
-         //       handleInitialiseSubscriptionRequest(queryObject);
+            // get connection inititalisation parameters
+            // Get the payload
+            JsonObject requestParamsForSubscription = messageAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD); 
+            // turn into map
+            Map<String, String> connectionInitParameters = new ConcurrentHashMap<>();
+            
+            // Add all the fields
+            Iterator<String> fieldNames = requestParamsForSubscription.keySet().iterator();
+            while(true == fieldNames.hasNext())
+            {
+                String currentFieldName = fieldNames.next();
+                String currentFieldValue = requestParamsForSubscription.getString(currentFieldName);
+                connectionInitParameters.put(currentFieldName.toLowerCase(), currentFieldValue);
+            }
+
+            eventFromMessage = new CPTAWebsocketProtocoLogonRequestEvent(this, connectionInitParameters);
         }
         // If we are a start
         else if(0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_START))
         {
-         //       handleStartSubscriptionRequest(queryObject);
+            // handle query
+            JsonObject subscriptionRequestAsJsonObject = messageAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD);  
+            String subscriptionID = subscriptionRequestAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
+            // Get operation name
+            String operationName = null;
+            if(false == subscriptionRequestAsJsonObject.isNull(CPTAGraphQLAPIConstants.OPERATION_NAME))
+            {
+                operationName = subscriptionRequestAsJsonObject.getString(CPTAGraphQLAPIConstants.OPERATION_NAME);
+            }
+            // get the query field
+            String graphQLQueryName = subscriptionRequestAsJsonObject.getString(CPTAGraphQLAPIConstants.OPERATION_TEXT);
+            // Need to turn variables into a map of keys and values
+            JsonObject variablesAsJsonObject = subscriptionRequestAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.OPERATION_VARIABLES);
+            Map<String, Object> variables = CPTAQueryVariablesParser.parseVariables(variablesAsJsonObject);
+
+            eventFromMessage = new CPTAWebsocketProtocolSubscribeRequestEvent
+                                                                            (
+                                                                            this,
+                                                                            subscriptionID, 
+                                                                            operationName,
+                                                                            variables,
+                                                                            graphQLQueryName
+                                                                            );
         }
         // If we are a stop
         else if(0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_STOP))
         {
-         //       handleStopSubscriptionRequest(queryObject);
+            // handle query
+            JsonObject subscriptionRequestAsJsonObject = messageAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD);  
+            String subscriptionID = subscriptionRequestAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
+
+            eventFromMessage = new CPTAWebsocketProtocolUnsubscribeRequestEvent(this, subscriptionID);
         }            
 
         return eventFromMessage;

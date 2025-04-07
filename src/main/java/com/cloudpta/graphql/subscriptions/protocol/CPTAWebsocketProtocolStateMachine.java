@@ -54,7 +54,15 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // handle logon accepted
         handleLogonAccepted();
 
-        // start thread to pump the subscriptions
+        // start pumping subscriptions if not already doing it
+        startPumpingSubscriptions();
+    }
+
+    public void logonRejected(Map<String, String> newConnectionParameters, String errorAsString)
+    {
+        // generate logon rejected message
+
+        // send it
     }
 
     public void subscriptionFailed(CPTAGraphQLSubscription<?, ?> failedSubscription, Map<String, Object> errorAsMap)
@@ -66,14 +74,8 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
         // turn exception into message
         String errorMessage = getMessageFromError(failedSubscription, errorAsException);
-        // convert to event
-        CPTAWebsocketProtocolSendMessageEvent sendMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, errorMessage);
-
-        // go through listeners and fire message send
-        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
-        {
-            currentListener.onSendMessage(sendMessageEvent);
-        }
+        // send error message
+        sendMessage(errorMessage);
     }
 
     public void saveSubscription(CPTAGraphQLSubscription<?, ?> subscriptionToSave)
@@ -90,14 +92,8 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // if there is a succeeded message
         if(null != subscriptionSucceededMessage)
         {
-            // convert to event
-            CPTAWebsocketProtocolSendMessageEvent sendMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, subscriptionSucceededMessage);
-
-            // go through listeners and fire message send
-            for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
-            {
-                currentListener.onSendMessage(sendMessageEvent);
-            }
+            // send succeeded message
+            sendMessage(subscriptionSucceededMessage);
         }
     }
 
@@ -119,14 +115,8 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, String nextResultAsString) 
     {
         String messageToSend = getMesageFromResult(subscription, nextResultAsString);
-        // convert to event
-        CPTAWebsocketProtocolSendMessageEvent sendMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, messageToSend);
-
-        // go through listeners and fire message send
-        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
-        {
-            currentListener.onSendMessage(sendMessageEvent);
-        }
+        // send the result message
+        sendMessage(messageToSend);
     }
 
     @Override
@@ -134,14 +124,8 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     {
         String errorMessage = getMessageFromError(subscription, error);
 
-        // convert to event
-        CPTAWebsocketProtocolSendMessageEvent sendMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, errorMessage);
-
-        // go through listeners and fire message send
-        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
-        {
-            currentListener.onSendMessage(sendMessageEvent);
-        }
+        // send error message
+        sendMessage(errorMessage);
 
         // then fire error events
         CPTAWebsocketProtocolErrorEvent errorEvent = new CPTAWebsocketProtocolErrorEvent(this, subscription, error);
@@ -224,6 +208,18 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         }
     }
 
+    protected void sendMessage(String messageAsString)
+    {
+        // convert to event
+        CPTAWebsocketProtocolSendMessageEvent sendMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, messageAsString);
+
+        // go through listeners and fire message send
+        for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+        {
+            currentListener.onSendMessage(sendMessageEvent);
+        }
+    }
+
     protected void handleLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) 
     {
         try
@@ -243,8 +239,8 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     protected void pumpSubscriptions()
     {
         // get timeout
-//        long timeoutInMilliseconds = 10000;
-//        long lastKeepAliveTimestamp = System.currentTimeMillis();
+        long timeoutInMilliseconds = 5000;
+        long lastKeepAliveTimestamp = System.currentTimeMillis();
 
   //      String timeoutInMillisecondsAsString = System.getenv("CPTA_GRAPHQL_SUBSCRIPTION_KEEP_ALIVE_TIMEOUT");
  //       if(null != timeoutInMillisecondsAsString)
@@ -267,15 +263,78 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // if we sent nothing
         if(0 == numberOfMessagesSent)
         {
+            // wait for the remaing timeout period
+            long timeToWait = timeoutInMilliseconds - (System.currentTimeMillis() -  lastKeepAliveTimestamp);
+            if(0 < timeToWait)
+            {
+                // sleep for the timeout period
+                try
+                {
+                    Thread.sleep(timeoutInMilliseconds);
+                }
+                catch(InterruptedException E)
+                {
+                    // do nothing
+                }
+            } 
+
             // keep alive
             String keepAliveMessage = getKeepAliveMessage();
-            // turn into send event
-            CPTAWebsocketProtocolSendMessageEvent sendKeepAliveMessageEvent = new CPTAWebsocketProtocolSendMessageEvent(this, keepAliveMessage);
-            // go through listeners and fire message send
-            for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+            // send keep alive message
+            sendMessage(keepAliveMessage);
+
+        }
+    }
+
+    protected void stopPumpingSubscriptions()
+    {
+        // get if we are already pumping
+        boolean alreadyPumping = (null != pumpThread);
+        if(true == alreadyPumping)
+        {
+            // check if running
+            alreadyPumping = pumpThread.isAlive();
+        }
+
+        // if we are
+        if(true == alreadyPumping)
+        {
+            // if there are no other subscriptions
+            if(mapOfIdsToSubscriptions.isEmpty())
             {
-                currentListener.onSendMessage(sendKeepAliveMessageEvent);
+                // stop the thread
+                pumpThread.stopPumping();
+                // wait 5 seconds to finish
+                try
+                {
+                    pumpThread.join(5000);
+                }
+                catch(Throwable E)
+                {
+                    // do nothing
+                }
+
+                // set thread to null
+                pumpThread = null;
             }
+        }
+    }
+
+    protected void startPumpingSubscriptions()
+    {
+        // get if we are not already pumping
+        boolean alreadyPumping = (null != pumpThread);
+        if(true == alreadyPumping)
+        {
+            // check if running
+            alreadyPumping = pumpThread.isAlive();
+        }
+
+        // if we are not then start pumping
+        if(false == alreadyPumping)
+        {
+            pumpThread = new CPTASubscriptionsPumpThread(this);
+            pumpThread.start();
         }
     }
 
@@ -330,8 +389,7 @@ class CPTASubscriptionsPumpThread extends Thread
         // while should pump
         while(true == shouldPump.get())
         {
-            // get all the subscriptions
-
+            protocolStackMachine.pumpSubscriptions();
         }
     }
 

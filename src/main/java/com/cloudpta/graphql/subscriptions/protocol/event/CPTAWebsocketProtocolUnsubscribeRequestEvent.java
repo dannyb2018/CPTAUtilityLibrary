@@ -23,11 +23,19 @@ import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMac
 
 public class CPTAWebsocketProtocolUnsubscribeRequestEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
-    protected CPTAWebsocketProtocolUnsubscribeRequestEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    public CPTAWebsocketProtocolUnsubscribeRequestEvent(CPTAWebsocketProtocolStateMachine newMachine, String newSubscriptionID) 
     {
         super(newMachine);
         
         eventType = CPTAWebsocketProtocolMachineEventType.UNSUBSCRIBE_REQUEST;
+
+        subscriptionID = newSubscriptionID;
     }
-    
+
+    public String getSubscriptionID()
+    {
+        return subscriptionID;
+    }
+
+    protected String subscriptionID = null;
 }

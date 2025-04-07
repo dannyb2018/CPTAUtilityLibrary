@@ -19,6 +19,7 @@ limitations under the License.
 */
 package com.cloudpta.graphql.subscriptions.protocol.subscriptions_transport_ws;
 
+import java.io.StringReader;
 import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMachine;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
@@ -31,14 +32,37 @@ import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSu
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribeRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribedEvent;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 
 public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsocketProtocolStateMachine
 {
     @Override
     protected CPTAWebsocketProtocolStateMachineEvent getEventFromMessage(String message) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getEventFromMessage'");
+        CPTAWebsocketProtocolStateMachineEvent eventFromMessage = null;
+        // convert to json
+        JsonReader reader = Json.createReader(new StringReader(message));
+        JsonObject queryObject = reader.readObject(); 
+        String type = queryObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE);  
+        // If we are an init
+        if( 0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_CONNECTION_INIT))
+        {
+         //       handleInitialiseSubscriptionRequest(queryObject);
+        }
+        // If we are a start
+        else if(0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_START))
+        {
+         //       handleStartSubscriptionRequest(queryObject);
+        }
+        // If we are a stop
+        else if(0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_STOP))
+        {
+         //       handleStopSubscriptionRequest(queryObject);
+        }            
+
+        return eventFromMessage;
     }
 
     @Override

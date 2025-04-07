@@ -173,73 +173,6 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
         return keepAliveMessage;
     }
 
-    @Override
-    protected void handleLoggedOn(CPTAWebsocketProtocolLoggedOnEvent request) 
-    {
-    }
-
-    @Override
-    protected void handleLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleLogoffRequest'");
-    }
-
-    @Override
-    protected void handleLoggedOff(CPTAWebsocketProtocolLoggedOffEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleLoggedOff'");
-    }
-
-    @Override
-    protected void handleKeepAlive(CPTAWebsocketProtocolKeepAliveEvent anyAdditionalInformation) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleKeepAlive'");
-    }
-
-    @Override
-    protected void handleError(Throwable error) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleError'");
-    }
-
-    @Override
-    protected void handleSubscribeRequest(CPTAWebsocketProtocolSubscribeRequestEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleSubscribeRequest'");
-    }
-
-    @Override
-    protected void handleSubscribed(CPTAWebsocketProtocolSubscribedEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleSubscribed'");
-    }
-
-    @Override
-    protected void handleUnsubscribeRequest(CPTAWebsocketProtocolUnsubscribeRequestEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleUnsubscribeRequest'");
-    }
-
-    @Override
-    protected void handleUnsubscribed(CPTAWebsocketProtocolUnsubscribedEvent request) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleUnsubscribed'");
-    }
-
-    @Override
-    protected void handleLogonAccepted() 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleLogonAccepted'");
-    }
 
     @Override
     protected void validateLogonRequest(CPTAWebsocketProtocoLogonRequestEvent request) throws CPTAException 
@@ -260,5 +193,34 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
             currentListener.onSendMessage(sendEvent);
         }
     }
-    
+
+    @Override
+    protected void handleLogonAccepted() 
+    {
+        // do nothing for now
+    }
+
+    @Override
+    protected void handleLogoffRequest(CPTAWebsocketProtocolLogoffRequestEvent request) 
+    {
+        // do nothing for now
+    }
+
+    @Override
+    protected void handleLoggedOff(CPTAWebsocketProtocolLoggedOffEvent request) 
+    {
+        // do nothing for now
+    }
+
+    @Override
+    protected void handleKeepAlive(CPTAWebsocketProtocolKeepAliveEvent anyAdditionalInformation) 
+    {
+        // do nothing for now
+    }
+
+    @Override
+    protected void handleError(Throwable error) 
+    {
+        // do nothing for now
+    }    
 }

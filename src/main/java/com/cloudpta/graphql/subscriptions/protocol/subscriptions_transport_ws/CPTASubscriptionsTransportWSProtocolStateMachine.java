@@ -42,6 +42,7 @@ import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUn
 import com.cloudpta.utilites.exceptions.CPTAException;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 
 public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsocketProtocolStateMachine
@@ -117,8 +118,8 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     @Override
     protected String getSubscriptionSucceededMessage(CPTAGraphQLSubscription<?, ?> subscription) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getSubscriptionSucceededMessage'");
+        // no message needed so return null
+        return null;
     }
 
     @Override
@@ -131,14 +132,35 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
     @Override
     protected String getMessageFromError(CPTAGraphQLSubscription<?, ?> subscription, Throwable error) 
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMessageFromError'");
+        // wrap the exception 
+        CPTAException wrappedError = new CPTAException(error);
+        // get the error data as a string
+        String errorAsString = wrappedError.getErrors().toString();
+
+        // get subscription id
+        String subscriptionID = subscription.getID();
+
+        // form the error message
+        JsonObjectBuilder errorMessageAsObjectBuilder = Json.createObjectBuilder();
+        errorMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_ERROR);
+        errorMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_ID, subscriptionID);
+        errorMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD, errorAsString);
+        JsonObject errorMessageAsObject = errorMessageAsObjectBuilder.build();
+        String errorMessage = errorMessageAsObject.toString();
+
+        return errorMessage;
     }
 
     @Override
-    protected String getKeepAliveMessage() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getKeepAliveMessage'");
+    protected String getKeepAliveMessage() 
+    {
+        // had a time out with no data so send a keep alive
+        JsonObjectBuilder keepAliveMessageAsObjectBuilder = Json.createObjectBuilder();
+        keepAliveMessageAsObjectBuilder.add(CPTAGraphQLAPIConstants.PAYLOAD_TYPE, CPTAGraphQLAPIConstants.PAYLOAD_TYPE_CONNECTION_KEEP_ALIVE);
+        JsonObject keepAliveMessageAsObject = keepAliveMessageAsObjectBuilder.build();
+        String keepAliveMessage = keepAliveMessageAsObject.toString();
+    
+        return keepAliveMessage;
     }
 
     @Override

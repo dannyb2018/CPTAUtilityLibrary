@@ -31,14 +31,11 @@ import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMac
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocoLogonRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolKeepAliveEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOffEvent;
-import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLoggedOnEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolLogoffRequestEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSendMessageEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolStateMachineEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribeRequestEvent;
-import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolSubscribedEvent;
 import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribeRequestEvent;
-import com.cloudpta.graphql.subscriptions.protocol.event.CPTAWebsocketProtocolUnsubscribedEvent;
 import com.cloudpta.utilites.exceptions.CPTAException;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -80,7 +77,7 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
         {
             // handle query
             JsonObject subscriptionRequestAsJsonObject = messageAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD);  
-            String subscriptionID = subscriptionRequestAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
+            String subscriptionID = messageAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
             // Get operation name
             String operationName = null;
             if(false == subscriptionRequestAsJsonObject.isNull(CPTAGraphQLAPIConstants.OPERATION_NAME))

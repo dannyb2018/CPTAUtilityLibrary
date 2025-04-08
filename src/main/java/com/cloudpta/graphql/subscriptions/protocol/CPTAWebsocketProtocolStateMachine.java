@@ -220,11 +220,11 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     {
         try
         {
-            // validate the request
-            validateLogonRequest(request);
-            
-            // send confirm back
-            sendLogonResponse(request);
+            // tell all the listeners
+            for(CPTAWebsocketProtocolStateMachineListener currentListener : listeners)
+            {
+                currentListener.onLogonRequest(request);
+            }
         }
         catch(Throwable E)
         {

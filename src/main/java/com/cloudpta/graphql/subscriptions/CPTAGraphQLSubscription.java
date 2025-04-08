@@ -154,7 +154,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         if(null != publisher)
         {
             int hashcode = publisher.hashCode();
-            CPTASubscriptionFeed.removePublisherToFeedLink(hashcode);
+            mapPublishersToSubscriptions.remove(hashcode);
         }
 
         // wipe our memory of the emitter and thread

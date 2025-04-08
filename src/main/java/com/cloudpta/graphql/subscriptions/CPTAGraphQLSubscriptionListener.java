@@ -20,10 +20,11 @@ limitations under the License.
 package com.cloudpta.graphql.subscriptions;
 
 import com.cloudpta.utilites.exceptions.CPTAException;
+import jakarta.json.JsonObject;
 
 public interface CPTAGraphQLSubscriptionListener
 {
-    public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, String nextResultAsString);
+    public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, JsonObject nextResultAsJsonObject);
     public void handleError(CPTAGraphQLSubscription<?, ?> subscription, CPTAException error);
     public void handleClose(CPTAGraphQLSubscription<?, ?> subscription);
 }

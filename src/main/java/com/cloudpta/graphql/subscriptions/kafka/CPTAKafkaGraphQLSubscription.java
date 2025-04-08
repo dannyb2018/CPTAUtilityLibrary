@@ -7,7 +7,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -17,19 +16,18 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import com.cloudpta.graphql.common.CPTAGraphQLInput;
-
 import com.cloudpta.graphql.common.CPTAGraphQLAPIConstants;
-import com.cloudpta.graphql.subscriptions.CPTASubscriptionFeedPublisher;
-
+import com.cloudpta.graphql.subscriptions.CPTAGraphQLSubscription;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
-public class CPTAKafkaGraphQLSubscription<ResultType,RequestType extends CPTAGraphQLInput> extends CPTASubscriptionFeedPublisher<ResultType,RequestType> 
+public abstract class CPTAKafkaGraphQLSubscription<ResultType,RequestType extends CPTAGraphQLInput> extends CPTAGraphQLSubscription<ResultType,RequestType> 
 {
     @Override
     protected void setupSource()
     {
+        
         // Need to get bootstap broker urls from context
         String url = context.get(CPTAGraphQLAPIConstants.KAFKA_BOOTSTRAP_BROKERS_URL);
         // Get the group id
@@ -99,14 +97,7 @@ public class CPTAKafkaGraphQLSubscription<ResultType,RequestType extends CPTAGra
         }
 
         return jsonReadFromKafka;
-    }
-
-    @Override
-    protected ResultType convertFromJson(JsonObject recordAsJson) 
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'convertFromJson'");
-    }   
+    } 
 
     protected JsonObject convertFromKafkaRecord(ConsumerRecord<byte[], byte[]> kafkaRecord) throws IOException
     {

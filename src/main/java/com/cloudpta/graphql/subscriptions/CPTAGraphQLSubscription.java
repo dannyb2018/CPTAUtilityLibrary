@@ -52,6 +52,8 @@ import jakarta.json.bind.config.PropertyNamingStrategy;
 // reactive streams bizarrely doesnt allow for
 public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPTAGraphQLInput> implements Subscriber<ExecutionResult>, ObservableOnSubscribe<ResultType>, Action
 {
+    protected abstract void parseInput(RequestType input);
+
     public static CPTAGraphQLSubscription<?, ?> getSubscription(Publisher<ExecutionResult> publisher)
     {
         // get the data fetcher publisher 
@@ -67,7 +69,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
     public void initialise(RequestType input)
     {
         // parse arguments
-        parseArguments(input);
+        parseInput(input);
 
         // Get the context from the request
         context = input.getInputContext();
@@ -218,7 +220,6 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         return updates;
     }
 
-    public abstract void parseArguments(RequestType input);
 
     protected abstract ResultType convertFromJson(JsonObject recordAsJson);
     protected abstract void setupSource();

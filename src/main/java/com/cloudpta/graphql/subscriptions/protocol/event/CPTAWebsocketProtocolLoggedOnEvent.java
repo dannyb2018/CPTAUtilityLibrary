@@ -23,7 +23,7 @@ import com.cloudpta.graphql.subscriptions.protocol.CPTAWebsocketProtocolStateMac
 
 public class CPTAWebsocketProtocolLoggedOnEvent extends CPTAWebsocketProtocolStateMachineEvent
 {
-    protected CPTAWebsocketProtocolLoggedOnEvent(CPTAWebsocketProtocolStateMachine newMachine) 
+    public CPTAWebsocketProtocolLoggedOnEvent(CPTAWebsocketProtocolStateMachine newMachine) 
     {
         super(newMachine);
 

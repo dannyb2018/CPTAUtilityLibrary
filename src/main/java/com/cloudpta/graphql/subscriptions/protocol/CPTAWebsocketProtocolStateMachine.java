@@ -53,9 +53,6 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
         // handle logon accepted
         handleLogonAccepted();
-
-        // start pumping subscriptions if not already doing it
-        startPumpingSubscriptions();
     }
 
     public void logonRejected(Map<String, String> newConnectionParameters, String errorAsString)
@@ -95,6 +92,9 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
             // send succeeded message
             sendMessage(subscriptionSucceededMessage);
         }
+
+        // start pumping subscriptions if not already doing it
+        startPumpingSubscriptions();
     }
 
     public void handleConnectionClosed()
@@ -108,7 +108,7 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     }
 
     @Override
-    public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, String nextResultAsString) 
+    public void handleNextResultSend(CPTAGraphQLSubscription<?, ?> subscription, JsonObject nextResultAsString) 
     {
         String messageToSend = getMesageFromResult(subscription, nextResultAsString);
         // send the result message
@@ -281,6 +281,9 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         {
             currentListener.onUnsubscribed(unsubscribedEvent);
         }        
+
+        // stop pumping subscriptions if not already doing it
+        stopPumpingSubscriptions();
     }
 
     protected void pumpSubscriptions()
@@ -335,34 +338,38 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
     protected void stopPumpingSubscriptions()
     {
-        // get if we are already pumping
-        boolean alreadyPumping = (null != pumpThread);
-        if(true == alreadyPumping)
+        // if we have no subscriptions
+        if(0 == mapOfIdsToSubscriptions.size())
         {
-            // check if running
-            alreadyPumping = pumpThread.isAlive();
-        }
-
-        // if we are
-        if(true == alreadyPumping)
-        {
-            // if there are no other subscriptions
-            if(mapOfIdsToSubscriptions.isEmpty())
+            // get if we are already pumping
+            boolean alreadyPumping = (null != pumpThread);
+            if(true == alreadyPumping)
             {
-                // stop the thread
-                pumpThread.stopPumping();
-                // wait 5 seconds to finish
-                try
-                {
-                    pumpThread.join(5000);
-                }
-                catch(Throwable E)
-                {
-                    // do nothing
-                }
+                // check if running
+                alreadyPumping = pumpThread.isAlive();
+            }
 
-                // set thread to null
-                pumpThread = null;
+            // if we are
+            if(true == alreadyPumping)
+            {
+                // if there are no other subscriptions
+                if(mapOfIdsToSubscriptions.isEmpty())
+                {
+                    // stop the thread
+                    pumpThread.stopPumping();
+                    // wait 5 seconds to finish
+                    try
+                    {
+                        pumpThread.join(5000);
+                    }
+                    catch(Throwable E)
+                    {
+                        // do nothing
+                    }
+
+                    // set thread to null
+                    pumpThread = null;
+                }
             }
         }
     }
@@ -397,7 +404,7 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
     protected abstract CPTAWebsocketProtocolStateMachineEvent getEventFromMessage(String message);
     protected abstract String getSubscriptionSucceededMessage(CPTAGraphQLSubscription<?, ?> subscription);
-    protected abstract String getMesageFromResult(CPTAGraphQLSubscription<?, ?> subscription, String resultAsString);
+    protected abstract String getMesageFromResult(CPTAGraphQLSubscription<?, ?> subscription, JsonObject resultAsJsonObject);
     protected abstract String getMessageFromError(CPTAGraphQLSubscription<?, ?> subscription, Throwable error);
     protected abstract String getKeepAliveMessage();
 

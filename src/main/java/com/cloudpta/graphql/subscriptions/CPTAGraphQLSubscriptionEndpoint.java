@@ -70,53 +70,25 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.TypeRuntimeWiring;
 import jakarta.json.JsonObject;
 
-public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWebsocketProtocolStateMachine> extends CPTAWebSocket implements CPTAWebsocketProtocolStateMachineListener
+public abstract class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWebsocketProtocolStateMachine> extends CPTAWebSocket implements CPTAWebsocketProtocolStateMachineListener
 {
-    // BUGBUGDB make abstract later
-
     // called during returnNewInstance to make a new protocol state machine
-    protected void returnNewProtocolStateMachine()
-    {
-
-    }
+    protected abstract ProtocolStateMachine returnNewProtocolStateMachine();
 
     // called during returnNewInstance, returns the concrete implementation of this endpoint
-    protected CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine> returnNewEndpoint()
-    {
-        return this;
-    }
+    protected abstract CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine> returnNewEndpoint();
 
     // This should return any existing graph ql build or null if there is not one
-    protected GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException
-    {
-        return null;
-    }
-
-    protected TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException
-    {
-        return null;
-    }
-    
-    protected GraphQL getExistingSubscriptionBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException
-    {
-        return null;
-    }
+    protected abstract GraphQL getExistingGraphQL(GraphQLContext context) throws CPTAException;
+    protected abstract TypeDefinitionRegistry getExistingTypeDefinitionRegistry(GraphQLContext context) throws CPTAException;
+    protected abstract GraphQL getExistingSubscriptionBuild(TypeDefinitionRegistry typeRegistry, GraphQLContext context) throws CPTAException;
 
     // These are the inputs to the various schemas
-    protected InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException
-    {
-        return null;
-    }
-    protected InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException
-    {
-        return null;
-    }
+    protected abstract InputStream getTypesSchemaStream(GraphQLContext context) throws CPTAException;
+    protected abstract InputStream getSubscriptionSchemaStream(GraphQLContext context) throws CPTAException;
 
     // get handlers
-    protected List<CPTAGraphQLHandler> getHandlers(GraphQLContext context)
-    {
-        return null;
-    }
+    protected abstract List<CPTAGraphQLHandler> getHandlers(GraphQLContext context);
     
     // BUGBUGDB no longer abstract
 
@@ -489,9 +461,9 @@ public class CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine extends CPTAWe
         // get an instance of this endpoint
         CPTAGraphQLSubscriptionEndpoint<ProtocolStateMachine> newInstance = returnNewEndpoint();
         // initialise protocol engine
-        newInstance.returnNewProtocolStateMachine();
+        newInstance.protocolStateMachine = newInstance.returnNewProtocolStateMachine();
         // add listener for protocol events
-        protocolStateMachine.addWebsocketProtocolStateMachineListener(newInstance);
+        newInstance.protocolStateMachine.addWebsocketProtocolStateMachineListener(newInstance);
 
         // return endpoint
         return newInstance;

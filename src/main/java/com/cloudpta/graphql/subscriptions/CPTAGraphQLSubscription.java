@@ -20,6 +20,7 @@ limitations under the License.
 package com.cloudpta.graphql.subscriptions;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,9 @@ import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 import io.reactivex.rxjava3.functions.Action;
 import io.reactivex.rxjava3.observables.ConnectableObservable;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
@@ -230,7 +233,7 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
     @Override
     public void onSubscribe(Subscription s) 
     {
-        subscriptionRef.set( s);
+        subscriptionRef = new AtomicReference<Subscription>(s);
         // Request maximum amount
         subscriptionRef.get().request(Long.MAX_VALUE);
     }
@@ -250,9 +253,11 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
                                         .withFormatting(false);
             Jsonb converter = JsonbBuilder.create(jsonbConfig);
             String nextResult = converter.toJson(spec);
+            JsonReader reader = Json.createReader(new StringReader(nextResult));
+            JsonObject resultObject = reader.readObject(); 
 
             // handle new result
-            listener.handleNextResultSend(this, nextResult);
+            listener.handleNextResultSend(this, resultObject);
 
             // get next ones
             subscriptionRef.get().request(Long.MAX_VALUE);

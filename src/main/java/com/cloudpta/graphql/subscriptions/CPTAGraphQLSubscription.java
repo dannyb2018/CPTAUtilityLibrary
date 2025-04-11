@@ -144,6 +144,10 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
 
     protected void handleUnsubscribe()
     {
+        // cancel the subscription
+        subscriptionRef.get().cancel();
+        onComplete();
+
         // Tell result getter thread to stop getting results
         shouldRun.set(false);
 
@@ -156,9 +160,6 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
             int hashcode = publisher.hashCode();
             mapPublishersToSubscriptions.remove(hashcode);
         }
-
-        // wipe our memory of the emitter and thread
-        currentEmitter = null;
     }
 
     protected long getNewResults(ObservableEmitter<ResultType> emitter) 
@@ -281,6 +282,8 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         int publisherID = publisher.hashCode();
         // store the subscriptions
         mapPublishersToSubscriptions.remove(publisherID);
+        // wipe our memory of the emitter and thread
+        currentEmitter = null;
     }
 
     @Override
@@ -295,6 +298,8 @@ public abstract class CPTAGraphQLSubscription<ResultType,RequestType extends CPT
         mapPublishersToSubscriptions.remove(publisherID);
         // no need for a listener
         listener = null;
+        // wipe our memory of the emitter and thread
+        currentEmitter = null;
     }
 
     @Override

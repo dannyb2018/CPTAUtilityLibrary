@@ -103,8 +103,7 @@ public class CPTASubscriptionsTransportWSProtocolStateMachine extends CPTAWebsoc
         else if(0 == type.compareTo(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_TYPE_STOP))
         {
             // handle query
-            JsonObject subscriptionRequestAsJsonObject = messageAsJsonObject.getJsonObject(CPTAGraphQLAPIConstants.PAYLOAD);  
-            String subscriptionID = subscriptionRequestAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
+            String subscriptionID = messageAsJsonObject.getString(CPTASubscriptionsTransportWSProtocolConstants.PAYLOAD_ID);
 
             eventFromMessage = new CPTAWebsocketProtocolUnsubscribeRequestEvent(this, subscriptionID);
         }            

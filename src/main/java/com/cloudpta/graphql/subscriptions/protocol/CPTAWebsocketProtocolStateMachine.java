@@ -51,6 +51,10 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
     {
         connectionParameters = newConnectionParameters;
 
+
+        // start pumping subscriptions if not already doing it
+        startPumpingSubscriptions();
+
         // handle logon accepted
         handleLogonAccepted();
     }
@@ -73,6 +77,9 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         String errorMessage = getMessageFromError(failedSubscription, errorAsException);
         // send error message
         sendMessage(errorMessage);
+
+        // stop pumping
+        stopPumpingSubscriptions();
     }
 
     public void saveSubscription(CPTAGraphQLSubscription<?, ?> subscriptionToSave)
@@ -92,13 +99,13 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
             // send succeeded message
             sendMessage(subscriptionSucceededMessage);
         }
-
-        // start pumping subscriptions if not already doing it
-        startPumpingSubscriptions();
     }
 
     public void handleConnectionClosed()
     {
+        // remove all the subscriptions
+        mapOfIdsToSubscriptions.clear();
+        // stop pumping
         stopPumpingSubscriptions();
     }
 
@@ -141,6 +148,9 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // remove the subscription
         String subscriptionID = subscription.getID();
         mapOfIdsToSubscriptions.remove(subscriptionID);
+
+        // stop pumping if there are no subscriptions
+        stopPumpingSubscriptions();
     }
 
     @Override
@@ -149,6 +159,10 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // remove the subscription
         String subscriptionID = subscription.getID();
         mapOfIdsToSubscriptions.remove(subscriptionID);
+
+        // stop pumping if there are no subscriptions
+        stopPumpingSubscriptions();
+
     }
 
     public void handleIncomingMessage(String message)
@@ -270,6 +284,7 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         // get the subscription
         String subscriptionToCloseID = unsubscribeRequestEvent.getSubscriptionID();
         CPTAGraphQLSubscription<?, ?> subscriptionToClose = mapOfIdsToSubscriptions.get(subscriptionToCloseID);
+        // remove from list
         // close it
         subscriptionToClose.shutdown();
     }
@@ -281,9 +296,6 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
         {
             currentListener.onUnsubscribed(unsubscribedEvent);
         }        
-
-        // stop pumping subscriptions if not already doing it
-        stopPumpingSubscriptions();
     }
 
     protected void pumpSubscriptions()
@@ -338,38 +350,34 @@ public abstract class CPTAWebsocketProtocolStateMachine implements CPTAGraphQLSu
 
     protected void stopPumpingSubscriptions()
     {
-        // if we have no subscriptions
-        if(0 == mapOfIdsToSubscriptions.size())
+        // get if we are already pumping
+        boolean alreadyPumping = (null != pumpThread);
+        if(true == alreadyPumping)
         {
-            // get if we are already pumping
-            boolean alreadyPumping = (null != pumpThread);
-            if(true == alreadyPumping)
-            {
-                // check if running
-                alreadyPumping = pumpThread.isAlive();
-            }
+            // check if running
+            alreadyPumping = pumpThread.isAlive();
+        }
 
-            // if we are
-            if(true == alreadyPumping)
+        // if we are
+        if(true == alreadyPumping)
+        {
+            // if there are no other subscriptions
+            if(mapOfIdsToSubscriptions.isEmpty())
             {
-                // if there are no other subscriptions
-                if(mapOfIdsToSubscriptions.isEmpty())
+                // stop the thread
+                pumpThread.stopPumping();
+                // wait 5 seconds to finish
+                try
                 {
-                    // stop the thread
-                    pumpThread.stopPumping();
-                    // wait 5 seconds to finish
-                    try
-                    {
-                        pumpThread.join(5000);
-                    }
-                    catch(Throwable E)
-                    {
-                        // do nothing
-                    }
-
-                    // set thread to null
-                    pumpThread = null;
+                    pumpThread.join(5000);
                 }
+                catch(Throwable E)
+                {
+                    // do nothing
+                }
+
+                // set thread to null
+                pumpThread = null;
             }
         }
     }
